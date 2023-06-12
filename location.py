@@ -1,5 +1,3 @@
-# Refer to https://math.stackexchange.com/questions/1725790/calculate-third-point-of-triangle-from-two-points-and-angles
-
 from model.point import Point
 from utils.constants import Mode
 
@@ -40,13 +38,14 @@ def get_tag_location(beamer_angles: List[float], beamer_positions: List[Point], 
   
   if mode == Mode.THREE_D:
     pos_b3 = beamer_positions[2] # TODO: right now, we only have 3 beamers. 1 and 2 are on one plane, 3 is on another.
-    z1 = calculate_z_coordinate(res1, pos_b3, angle_b1, True)
-    z2 = calculate_z_coordinate(res2, pos_b3, angle_b1, True)
+    z1 = compute_z_coordinate(res1, pos_b3, angle_b1, True)
+    z2 = compute_z_coordinate(res2, pos_b3, angle_b1, True)
 
     return [Point(res1[0], res1[1], z1), Point(res2[0], res2[1], z2)]
 
 """
 Computes x and y coordinates of tag
+Refer to https://math.stackexchange.com/questions/1725790/calculate-third-point-of-triangle-from-two-points-and-angles
 
 angle_b1  : incidence angle of beamer 1 (degrees)
 angle_b2  : incidence angle of beamer 2 (degrees)
@@ -90,7 +89,8 @@ beamer_coordinates  : coordinates of beamer
 angle               : angle of inclination/declination of tag wrt beamer (degrees)
 is_tag_below        : True if tag is below beamer, False otherwise
 """
-def calculate_z_coordinate(tag_coordinates: Point, beamer_coordinates: Point, angle: float, is_tag_below: bool):
+def compute_z_coordinate(tag_coordinates: Point, beamer_coordinates: Point, angle: float, is_tag_below: bool):
+  
   # Extract coordinates of tag
   x, y, _ = tag_coordinates.get()
 
