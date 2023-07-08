@@ -18,6 +18,7 @@ bool startReading = false;
 void setup() {
   pinMode(synchronizationInPin, INPUT);
   pinMode(analogInPin, INPUT);
+  memset(message, 0, sizeof(message)); // to ensure we initialize the values in message
 }
 
 /*
@@ -30,25 +31,34 @@ void loop() {
   unsigned long periodStartTime;
   int i;
   if(digitalRead(synchronizationInPin) == HIGH) {
+    // maybe this will get triggered multiple times, won't suggest a change rn but maybe it might be nice to have a positive edge-triggered interrupt for synchronizationInPin
+    // https://www.arduino.cc/reference/en/language/functions/external-interrupts/attachinterrupt/ 
     startReading = true;
     messageStartTime = millis();
     periodStartTime = millis();
     i = 0;
+    Serial.println("synchronize");
+
   }
   if(startReading) {
     unsigned long currentMillis = millis();
     if(message[i] != 1) {
       inputVoltage = analogRead(analogInPin);
+      // do we care if it's below a max threshold?
       if ((inputVoltage > minThreshold) && (inputVoltage < maxThreshold)) {
         message[i] = 1;
       }
     }
     if((currentMillis - periodStartTime) >= timePeriod) {
+      // I am unsure about this because it seems like we may end up with skew on the period. I feel that an interrupt might be the best choice, especially as we increase speed
+      // maybe not rn, but i'm just flagging this in case we ever end up having problems around this
       periodStartTime = currentMillis;
       i += 1;
     }
     if((currentMillis - messageStartTime) >= (messageLength * timePeriod)) {
       startReading = false;
+      // should we reset the message here?
+      // memset(message, 0, sizeof(message));
       // Serial.println(message);
     }
   }
