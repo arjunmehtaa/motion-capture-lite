@@ -1,5 +1,5 @@
-const int synchronizationInPin = A0;
-const int analogInPin = A1;
+const int synchronizationInPin = 14;
+const int analogInPin = 12;
 
 const int timePeriod = 1000;
 const int minVoltage = 512;
@@ -9,14 +9,15 @@ const int voltageMargin = 100;
 const int messageLength = 5;
 
 int inputVoltage = 0;
-int minThreshold = 0;
-int maxThreshold = 0;
+int minThreshold = minVoltage - voltageMargin;
+int maxThreshold = maxVoltage + voltageMargin;
 int message[messageLength];
 
+bool startReading = false;
+
 void setup() {
-  Serial.begin(9600); 
-  minThreshold = minVoltage - voltageMargin;
-  maxThreshold = maxVoltage + voltageMargin;
+  pinMode(synchronizationInPin, INPUT);
+  pinMode(analogInPin, INPUT);
 }
 
 /*
@@ -24,8 +25,7 @@ Assuming readings are taken over entire time periods
 LED1 from 0 to T1, 
 LED2 from T1 to T2, and so on...
 */
-void loop1() {
-  bool startReading = false;
+void loop() {
   unsigned long messageStartTime;
   unsigned long periodStartTime;
   int i;
@@ -49,7 +49,7 @@ void loop1() {
     }
     if((currentMillis - messageStartTime) >= (messageLength * timePeriod)) {
       startReading = false;
-      Serial.println(message);
+      // Serial.println(message);
     }
   }
 }
@@ -87,7 +87,7 @@ void loop2() {
     }
     if((currentMillis - messageStartTime) >= (messageLength * timePeriod)) {
       startReading = false;
-      Serial.println(message);
+      // Serial.println(message);
     }
   }
 }
@@ -129,7 +129,7 @@ void loop3() {
     }
     if((currentMillis - messageStartTime) >= (messageLength * timePeriod)) {
       startReading = false;
-      Serial.println(message);
+      // Serial.println(message);
     }
   }
 }
