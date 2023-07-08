@@ -19,7 +19,6 @@ void setup() {
 }
 
 void loop() {
-  bool startReading = false;
   unsigned long measurementStartTime;
   unsigned long ledStartTime;
   int i;
