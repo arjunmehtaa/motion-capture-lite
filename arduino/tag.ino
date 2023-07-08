@@ -60,7 +60,6 @@ LED1 at T/2
 LED2 at T + T/2, and so on...
 */
 void loop2() {
-  bool startReading = false;
   unsigned long messageStartTime;
   unsigned long previousMillis;
   unsigned long delayPeriod;
@@ -98,7 +97,6 @@ LED1 from (T/2 - timeMargin) to (T/2 + timeMargin)
 LED2 from ((T + T/2) - timeMargin) to ((T + T/2) + timeMargin), and so on...
 */
 void loop3() {
-  bool startReading = false;
   unsigned long messageStartTime;
   unsigned long previousMillis;
   unsigned long delayPeriod;
