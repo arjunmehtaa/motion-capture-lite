@@ -3,7 +3,7 @@
 
 const int ANALOG_PIN = A0;
 
-const unsigned long timePeriod = 5000;
+const unsigned long timePeriod = 500;
 const int minVoltage = 100;
 const int maxVoltage = 1000;
 const int timeMargin = 100;
@@ -39,7 +39,7 @@ void loop() {
   if (!startReading && Serial.available() > 0) {
     char sync_inp = Serial.read();
     if(sync_inp == 'v') { // SYNC SIGNAL
-      Serial.println("SYNC");
+      // Serial.println("SYNC");
       startReading = true;
       messageStartTime = millis();
       periodStartTime = millis();
@@ -53,13 +53,13 @@ void loop() {
     inputVoltage = analogRead(ANALOG_PIN);
     if (message[i] != 1 && (inputVoltage > minThreshold) && (inputVoltage < maxThreshold)) {
       message[i] = 1;
-      Serial.println(inputVoltage);
-      Serial.println(i);
+      // Serial.println(inputVoltage);
+      // Serial.println(i);
     }
     
     if((currentMillis - periodStartTime) >= timePeriod) { 
-      Serial.print("period:");
-      Serial.println(currentMillis);
+      // Serial.print("period:");
+      // Serial.println(currentMillis);
       periodStartTime = currentMillis;
       i += 1;
     }
@@ -67,12 +67,22 @@ void loop() {
     if((currentMillis - messageStartTime) >= (messageLength * timePeriod)) {
       if (i >= messageLength) {
         startReading = false;
+        message[0] = 1;
+        message[2] = 1;
         for (int k = 0; k < messageLength; k++) {
-          Serial.print(message[k]);
+          char c;
+          if (message[k] == 0) {
+            c = '0';
+          }
+          if (message[k] == 1) {
+            c = '1';
+          }
+          Serial.print(c);
         }
-        Serial.println();
-        memset(message, 0, sizeof(message));
+        Serial.print("x");
       }
     }
   }
+
+
 }
