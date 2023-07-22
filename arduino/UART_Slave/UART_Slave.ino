@@ -2,17 +2,27 @@
 // const int analogInPin = 12; for testing, using UART
 
 const int ANALOG_PIN = A0;
-const int LOCATION_GPIO = 14;
-const int ORIENTATION_GPIO = 12;
+const int LOCATION_GPIO = 12;  // TODO: swapped for testing
+const int ORIENTATION_GPIO = 14;
 
 const unsigned long timePeriod = 5000;
 const int minVoltage = 100;
 const int maxVoltage = 500;
-const int timeMargin = 100;
 const int voltageMargin = 0;
 const unsigned long messageLength = 5;
 
 const unsigned long transitionDelay = 5000;
+
+unsigned long delayPeriod;
+const unsigned long timeMargin = 1000;
+
+unsigned long messageStartTime;
+unsigned long periodStartTime;
+unsigned long transitionStartTime;
+unsigned long nonReadingStartTime; // ~ previousMillis in loop3
+
+int i;
+
 
 int inputVoltage = 0;
 int minThreshold = minVoltage - voltageMargin;
@@ -32,28 +42,28 @@ void setup() {
   pinMode(ORIENTATION_GPIO, OUTPUT); // Set the pin as an OUTPUT
 }
 
-unsigned long messageStartTime;
-unsigned long periodStartTime;
-unsigned long transitionStartTime;
-int i;
 
 /*
-Assuming readings are taken over entire time periods
-LED1 from 0 to T1, 
-LED2 from T1 to T2, and so on...
+Taking readings from (T/2 - timeMargin) to (T/2 + timeMargin)
+LED1 from (T/2 - timeMargin) to (T/2 + timeMargin)
+LED2 from ((T + T/2) - timeMargin) to ((T + T/2) + timeMargin), and so on...
 */
 void loop() {
+  unsigned long currentTime = millis();
+
   // SYNC SIGNAL (SHOULD BE INTERRUPT)
   if (!startReading && !startTransitionDelay) { // && Serial.available() > 0
     // char sync_inp = Serial.read();
-    unsigned long currentMillis = millis();
 
     if(true) { // SYNC SIGNAL
       // Serial.println("SYNC");
       Serial.println("STARTING 1st TRANSITION");
       startTransitionDelay = true;
-      transitionStartTime = currentMillis;
-      messageStartTime = currentMillis;
+      transitionStartTime = currentTime;
+      messageStartTime = currentTime;
+
+      delayPeriod = (timePeriod / 2) - timeMargin;
+
       i = 0;
 
       digitalWrite(LOCATION_GPIO, HIGH);
@@ -61,39 +71,48 @@ void loop() {
     }
   }
 
-  if(startTransitionDelay) {
-    unsigned long currentMillis = millis();
-    
+  if(startTransitionDelay) {    
     // END TRANSITION TIME
-    if ((currentMillis - transitionStartTime) >= transitionDelay) {
+    if ((currentTime - transitionStartTime) >= transitionDelay) {
       Serial.println("ENDING TRANSITION");
       startReading = true;
-      periodStartTime = currentMillis;
+      periodStartTime = currentTime;
+      nonReadingStartTime = currentTime;
       startTransitionDelay = false;
     }
     
   }
 
   if(startReading) {
-    unsigned long currentMillis = millis();
-
-    inputVoltage = analogRead(ANALOG_PIN);
-    if (i < messageLength - 1) { // READING LOCATION
-      if (message[i] != 1 && (inputVoltage > minThreshold) && (inputVoltage < maxThreshold)) {
-        message[i] = 1;
+    if ((currentTime - nonReadingStartTime) >= delayPeriod) {
+      inputVoltage = analogRead(ANALOG_PIN);
+      if (i < messageLength - 1) { // READING LOCATION
+        Serial.print("V:");
         Serial.println(inputVoltage);
-        // Serial.println(i);
+        if (message[i] != 1 && (inputVoltage > minThreshold) && (inputVoltage < maxThreshold)) {
+          message[i] = 1;
+          Serial.println(inputVoltage);
+          // Serial.println(i);
+        }
+      } else if (i == messageLength - 1) { // READING ORIENTATION
+        if (message[i] == 0) { // TODO: Orientation is being read at initial start time
+          message[i] = inputVoltage;
+        }
       }
-    } else if (i == messageLength - 1) { // READING ORIENTATION
-      if (message[i] == 0) { // TODO: Orientation is being read at initial start time
-        message[i] = inputVoltage;
+    } 
+
+    if((currentTime - nonReadingStartTime) >= (delayPeriod + (2 * timeMargin))) {
+      Serial.println("BEGINNING OF NON-READING");
+      nonReadingStartTime = currentTime;
+      if(i == 0) {
+        delayPeriod = 2 * ((timePeriod / 2) - timeMargin);
       }
     }
-    
-    if((currentMillis - periodStartTime) >= timePeriod) { 
+
+    if((currentTime - periodStartTime) >= timePeriod) { 
       // Serial.print("period:");
-      // Serial.println(currentMillis);
-      periodStartTime = currentMillis;
+      // Serial.println(currentTime);
+      periodStartTime = currentTime;
       i += 1;
 
       Serial.println("ENDING TIME PERIOD");
@@ -102,7 +121,7 @@ void loop() {
         Serial.println("STARTING 2nd TRANSITION");
         startTransitionDelay = true;
         startReading = false;
-        transitionStartTime = currentMillis;
+        transitionStartTime = currentTime;
 
         digitalWrite(LOCATION_GPIO, LOW);
         digitalWrite(ORIENTATION_GPIO, HIGH);
@@ -110,7 +129,7 @@ void loop() {
     }
 
     // MESSAGE PASSING
-    if((currentMillis - messageStartTime) >= ((messageLength * timePeriod) + (2 * transitionDelay))) {
+    if((currentTime - messageStartTime) >= ((messageLength * timePeriod) + (2 * transitionDelay))) {
       if (i >= messageLength) {
         startReading = false;
         for (int k = 0; k < messageLength; k++) {
