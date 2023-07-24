@@ -56,7 +56,7 @@ void loop() {
 
     if(true) { // SYNC SIGNAL
       // Serial.println("SYNC");
-      Serial.println("STARTING 1st TRANSITION");
+      // Serial.println("STARTING 1st TRANSITION");
       startTransitionDelay = true;
       transitionStartTime = currentTime;
       messageStartTime = currentTime;
@@ -73,7 +73,7 @@ void loop() {
   if(startTransitionDelay) {    
     // END TRANSITION TIME
     if ((currentTime - transitionStartTime) >= transitionDelay) {
-      Serial.println("ENDING TRANSITION");
+      // Serial.println("ENDING TRANSITION");
       startReading = true;
       periodStartTime = currentTime;
       nonReadingStartTime = currentTime;
@@ -87,7 +87,7 @@ void loop() {
       inputVoltage = analogRead(ANALOG_PIN);
       if (i < messageLength - 1) { // READING LOCATION
         Serial.print("V:");
-        Serial.println(inputVoltage);
+        // Serial.println(inputVoltage);
         if (message[i] != 1 && (inputVoltage > minThreshold) && (inputVoltage < maxThreshold)) {
           message[i] = 1;
           Serial.println(inputVoltage);
@@ -101,7 +101,7 @@ void loop() {
     } 
 
     if((currentTime - nonReadingStartTime) >= (delayPeriod + (2 * timeMargin))) {
-      Serial.println("BEGINNING OF NON-READING");
+      // Serial.println("BEGINNING OF NON-READING");
       nonReadingStartTime = currentTime;
       if(i == 0) {
         delayPeriod = 2 * ((timePeriod / 2) - timeMargin);
@@ -114,10 +114,10 @@ void loop() {
       periodStartTime = currentTime;
       i += 1;
 
-      Serial.println("ENDING TIME PERIOD");
+      // Serial.println("ENDING TIME PERIOD");
       if (i == messageLength - 1) {
         // STARTING SECOND TRANSITION DELAY (AFTER LOCATION)
-        Serial.println("STARTING 2nd TRANSITION");
+        // Serial.println("STARTING 2nd TRANSITION");
         startTransitionDelay = true;
         startReading = false;
         transitionStartTime = currentTime;

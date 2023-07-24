@@ -144,7 +144,7 @@ def compute_z_axis_resolution(alpha: float, d: float, p: float):
 ## Testing
 
 ## Test get_tag_location() for 2D
-# print(get_tag_location([30, 30], [Point(5,2), Point(2,3)]))
+print(get_tag_location([30, 30], [Point(5,2), Point(2,3)]))
 
 ## Test calculate_z_coordinate()
 # tag_coordinate_1 = Point(0, 1)
