@@ -24,6 +24,7 @@ unsigned long ledStartTime;
 int i;
 
 void turnOneLEDOn(int p) {
+  p = 1; // force 1 to be on
   Serial.print("Turn on ");
   Serial.println(p);
   for (int i = 0; i < numLeds; i++) {

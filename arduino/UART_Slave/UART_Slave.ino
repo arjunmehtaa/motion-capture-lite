@@ -11,7 +11,7 @@ const int maxVoltage = 500;
 const int voltageMargin = 0;
 const unsigned long messageLength = 5;
 
-const unsigned long transitionDelay = 5000;
+const unsigned long transitionDelay = 1000;
 
 unsigned long delayPeriod;
 const unsigned long timeMargin = 1000;
@@ -22,7 +22,6 @@ unsigned long transitionStartTime;
 unsigned long nonReadingStartTime; // ~ previousMillis in loop3
 
 int i;
-
 
 int inputVoltage = 0;
 int minThreshold = minVoltage - voltageMargin;
