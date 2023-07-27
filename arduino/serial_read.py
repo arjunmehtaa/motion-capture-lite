@@ -1,5 +1,6 @@
 import serial
 
+
 def read_from_microcontroller(port, baud_rate):
     try:
         # Open the serial connection
@@ -9,19 +10,17 @@ def read_from_microcontroller(port, baud_rate):
 
         # Read data until user interrupts the program (Ctrl+C)
         while True:
-            data = ser.readline().strip()
-            try:
-                decoded_data = data.decode('utf-8').strip()
-                print('decoded data ', decoded_data)
-                return decoded_data
-            except UnicodeDecodeError:
-                # decoding failed
-                continue
+            data = ser.readline().decode('utf-8').strip()
+            print(f"Received: {data}")
+
+    except KeyboardInterrupt:
+        print("\nSerial communication stopped by the user.")
     except serial.SerialException as e:
         print(f"Serial error: {e}")
     finally:
         if ser.is_open:
             ser.close()
+
 
 if __name__ == "__main__":
     # Replace '/dev/ttyACM0' with the appropriate port name for your microcontroller
