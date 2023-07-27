@@ -5,6 +5,8 @@ from arduino.serial_read import read_from_microcontroller
 
 import argparse
 import math
+import serial
+
 from typing import List
 
 
@@ -163,20 +165,39 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=str, help='Serial port of the microcontroller (e.g., COM5 or /dev/ttyUSB1)')
     parser.add_argument('--baud_rate', type=int, default=9600, help='Baud rate for serial communication (default: 9600)')
     args = parser.parse_args()
+    port = args.port
+    baud_rate = args.baud_rate
 
     if args.port:
-        current_input = ''
         try:
+            # Open the serial connection
+            current_input = ''
+            ser = serial.Serial(port, baud_rate)
+
+            print(f"Reading from microcontroller on {port}...")
+
+            # Read data until user interrupts the program (Ctrl+C)
             while True:
-                data = read_bitstream(port=args.port, baud_rate=args.baud_rate)
-                if data == 'x':  # terminate tag's input
-                    # don't know beamer positions
-                    print(get_tag_location(current_input.split(''), []))
-                    current_input = ''
-                elif data is not None:
-                    current_input += data
-                print(current_input)
+                data = ser.readline().strip()
+                try:
+                    decoded_data = data.decode('utf-8').strip()
+                    if decoded_data == 'x':  # terminate tag's input
+                        # don't know beamer positions
+                        print(get_tag_location(current_input.split(''), []))
+                        current_input = ''
+                    elif decoded_data is not None:
+                        current_input += decoded_data
+                    print(current_input)
+                except UnicodeDecodeError:
+                    # decoding failed
+                    continue
+
         except KeyboardInterrupt:
             print("\nSerial communication stopped by the user.")
+        except serial.SerialException as e:
+            print(f"Serial error: {e}")
+        finally:
+            if ser.is_open:
+                ser.close()
     else:
         print("Please provide the serial port with --port argument.")
