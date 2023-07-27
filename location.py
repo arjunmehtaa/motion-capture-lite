@@ -19,7 +19,7 @@ number_of_regions = 1 << 3  # 3-bit gray coding, 8 regions
 """
 returns a region from 0 to number_of_regions
 """
-def get_relative_location(bit_stream: List[float], bit_index: int,
+def get_region(bit_stream: List[float], bit_index: int,
                           left_ptr: int, right_ptr: int, left_side):
     if bit_index == len(bit_stream):
         return left_ptr
@@ -28,18 +28,18 @@ def get_relative_location(bit_stream: List[float], bit_index: int,
     if bit_stream[bit_index]:
         if left_side:  # if in the previous iteration, we chose the left subset of choices
             # choose the right side
-            return get_relative_location(bit_stream, bit_index + 1, mid_point+1, right_ptr, False)
+            return get_region(bit_stream, bit_index + 1, mid_point+1, right_ptr, False)
         else:
             # choose left side
-            return get_relative_location(bit_stream, bit_index + 1, left_ptr, mid_point, True)
+            return get_region(bit_stream, bit_index + 1, left_ptr, mid_point, True)
     else:
         # bit value is 0
         if left_side:
             # choose left side
-            return get_relative_location(bit_stream, bit_index + 1, left_ptr, mid_point, True)
+            return get_region(bit_stream, bit_index + 1, left_ptr, mid_point, True)
         else:
             # choose right side
-            return get_relative_location(bit_stream, bit_index + 1, mid_point+1, right_ptr, False)
+            return get_region(bit_stream, bit_index + 1, mid_point+1, right_ptr, False)
 
     return None
 
@@ -66,7 +66,7 @@ def get_beamer_angles(
     beamer_bit_streams = [bit_stream[i:i+3] for i in range(0, bit_stream_length, 3)]
 
     for stream in beamer_bit_streams:
-        region: int = get_relative_location(stream, 0, 0, number_of_regions-1, True)
+        region: int = get_region(stream, 0, 0, number_of_regions-1, True)
         angle: int = get_angle(region)
         angles.append(angle)
 
