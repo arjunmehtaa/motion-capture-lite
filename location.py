@@ -1,7 +1,10 @@
 from model.point import Point
 from utils.constants import Mode
 
+import argparse
 import math
+import serial
+
 from typing import List
 
 # range of output values along a given dimension, values within the x,y,z axes will be scaled according to this range
@@ -219,3 +222,45 @@ def compute_z_axis_resolution(alpha: float, d: float, p: float):
 # tag_coordinate_1 = Point(0, 1)
 # beamer_coordinate_1 = Point(3, 4, 10)
 # print(calculate_z_coordinate(tag_coordinate_1, beamer_coordinate_1, 30, True))
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Read data from microcontroller.')
+    parser.add_argument('--port', type=str, help='Serial port of the microcontroller (e.g., COM5 or /dev/ttyUSB1)')
+    parser.add_argument('--baud_rate', type=int, default=9600, help='Baud rate for serial communication (default: 9600)')
+    args = parser.parse_args()
+    port = args.port
+    baud_rate = args.baud_rate
+
+    if args.port:
+        try:
+            # Open the serial connection
+            current_input = ''
+            ser = serial.Serial(port, baud_rate)
+
+            print(f"Reading from microcontroller on {port}...")
+
+            # Read data until user interrupts the program (Ctrl+C)
+            while True:
+                data = ser.readline().strip()
+                try:
+                    decoded_data = data.decode('utf-8').strip()
+                    if decoded_data == 'x':  # terminate tag's input
+                        # don't know beamer positions
+                        print(get_tag_location(current_input.split(''), []))
+                        current_input = ''
+                    elif decoded_data is not None:
+                        current_input += decoded_data
+                    print(current_input)
+                except UnicodeDecodeError:
+                    # decoding failed
+                    continue
+
+        except KeyboardInterrupt:
+            print("\nSerial communication stopped by the user.")
+        except serial.SerialException as e:
+            print(f"Serial error: {e}")
+        finally:
+            if ser.is_open:
+                ser.close()
+    else:
+        print("Please provide the serial port with --port argument.")

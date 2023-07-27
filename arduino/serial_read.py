@@ -1,10 +1,11 @@
 import serial
 
+
 def read_from_microcontroller(port, baud_rate):
     try:
         # Open the serial connection
         ser = serial.Serial(port, baud_rate)
-        
+
         print(f"Reading from microcontroller on {port}...")
 
         # Read data until user interrupts the program (Ctrl+C)
@@ -19,6 +20,7 @@ def read_from_microcontroller(port, baud_rate):
     finally:
         if ser.is_open:
             ser.close()
+
 
 if __name__ == "__main__":
     # Replace '/dev/ttyACM0' with the appropriate port name for your microcontroller
