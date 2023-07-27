@@ -1,8 +1,6 @@
 from model.point import Point
 from utils.constants import Mode
 
-from arduino.serial_read import read_from_microcontroller
-
 import argparse
 import math
 import serial
