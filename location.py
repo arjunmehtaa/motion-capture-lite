@@ -4,9 +4,77 @@ from utils.constants import Mode
 import math
 from typing import List
 
+# range of output values along a given dimension, values within the x,y,z axes will be scaled according to this range
+output_range: List[float] = [-10, 10]
+
+# calibration values
+# needs to be configured such that we take a measure that's on one end of the beamer (only necessary for 3D)
+# a second measurement on the second end of the beamer and divide by the number of regions
+# will need to check how this works with the current beamer_positions
+
+max_distance = 10  # this is a distance between region 000 (left) and 100 (right), in some real measurement (e.g. cm)
+max_angle = 45  # this is the maximum angle relative to the beamer (center axis going straight ahead) that can be considered in-bounds (in degrees)
+number_of_regions = 1 << 3  # 3-bit gray coding, 8 regions
+
+"""
+returns a region from 0 to number_of_regions
+"""
+def get_relative_location(bit_stream: List[float], bit_index: int,
+                          left_ptr: int, right_ptr: int, left_side):
+    if bit_index == len(bit_stream):
+        return left_ptr
+
+    mid_point = (left_ptr + right_ptr) // 2
+    if bit_stream[bit_index]:
+        if left_side:  # if in the previous iteration, we chose the left subset of choices
+            # choose the right side
+            return get_relative_location(bit_stream, bit_index + 1, mid_point+1, right_ptr, False)
+        else:
+            # choose left side
+            return get_relative_location(bit_stream, bit_index + 1, left_ptr, mid_point, True)
+    else:
+        # bit value is 0
+        if left_side:
+            # choose left side
+            return get_relative_location(bit_stream, bit_index + 1, left_ptr, mid_point, True)
+        else:
+            # choose right side
+            return get_relative_location(bit_stream, bit_index + 1, mid_point+1, right_ptr, False)
+
+    return None
+
+
+def get_angle(region: int):
+    angle: float = (2*max_angle) * (region)/number_of_regions
+    angle -= max_angle
+    # offset to get midpoint of region
+    offset = (2*max_angle)/(2*number_of_regions)
+    angle += offset
+    return angle
+
+
+# a bit stream is n * b bits
+# n is the number of LEDs on a beamer (one result per LED - bit mask combo)
+# b is the number of beamers, for one-dimensional motion, this is 1
+# for the first demo, this will be 3 bit inputs
+def get_beamer_angles(
+        bit_stream: List[float]) -> List[float]:
+    # ordering of bit results (3 bits) from left to right
+    # gray code sequence: 000, 001, 011, 010, 110, 111, 101, 100
+    angles = []
+    bit_stream_length = len(bit_stream)
+    beamer_bit_streams = [bit_stream[i:i+3] for i in range(0, bit_stream_length, 3)]
+
+    for stream in beamer_bit_streams:
+        region: int = get_relative_location(stream, 0, 0, number_of_regions-1, True)
+        angle: int = get_angle(region)
+        angles.append(angle)
+
+    return angles
+
 
 def get_tag_location(
-    beamer_angles: List[float], beamer_positions: List[Point], mode: Mode = Mode.TWO_D
+    bit_stream : List[float], beamer_positions: List[Point], mode: Mode = Mode.ONE_D
 ):
     """
     Computes the location of the tag
@@ -14,6 +82,7 @@ def get_tag_location(
     beamer_angles       : list of angles of incidence of beamers (degrees)
     beamer_positions    : list of positions of beamers (List[Point])
     """
+    beamer_angles: List[float] = get_beamer_angles(bit_stream)
 
     # Check if data is valid
     if len(beamer_angles) < 2:
