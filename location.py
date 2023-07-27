@@ -1,6 +1,9 @@
 from model.point import Point
 from utils.constants import Mode
 
+from arduino.serial_read import read_from_microcontroller
+
+import argparse
 import math
 from typing import List
 
@@ -150,3 +153,30 @@ def compute_z_axis_resolution(alpha: float, d: float, p: float):
 # tag_coordinate_1 = Point(0, 1)
 # beamer_coordinate_1 = Point(3, 4, 10)
 # print(calculate_z_coordinate(tag_coordinate_1, beamer_coordinate_1, 30, True))
+
+def read_bitstream(port: str, baud_rate: int):
+    data = read_from_microcontroller(port=port, baud_rate=baud_rate)
+    return data
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Read data from microcontroller.')
+    parser.add_argument('--port', type=str, help='Serial port of the microcontroller (e.g., COM5 or /dev/ttyUSB1)')
+    parser.add_argument('--baud_rate', type=int, default=9600, help='Baud rate for serial communication (default: 9600)')
+    args = parser.parse_args()
+
+    if args.port:
+        current_input = ''
+        try:
+            while True:
+                data = read_bitstream(port=args.port, baud_rate=args.baud_rate)
+                if data == 'x':  # terminate tag's input
+                    # don't know beamer positions
+                    print(get_tag_location(current_input.split(''), []))
+                    current_input = ''
+                elif data is not None:
+                    current_input += data
+                print(current_input)
+        except KeyboardInterrupt:
+            print("\nSerial communication stopped by the user.")
+    else:
+        print("Please provide the serial port with --port argument.")

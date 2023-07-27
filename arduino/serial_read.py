@@ -4,16 +4,19 @@ def read_from_microcontroller(port, baud_rate):
     try:
         # Open the serial connection
         ser = serial.Serial(port, baud_rate)
-        
+
         print(f"Reading from microcontroller on {port}...")
 
         # Read data until user interrupts the program (Ctrl+C)
         while True:
-            data = ser.readline().decode('utf-8').strip()
-            print(f"Received: {data}")
-
-    except KeyboardInterrupt:
-        print("\nSerial communication stopped by the user.")
+            data = ser.readline().strip()
+            try:
+                decoded_data = data.decode('utf-8').strip()
+                print('decoded data ', decoded_data)
+                return decoded_data
+            except UnicodeDecodeError:
+                # decoding failed
+                continue
     except serial.SerialException as e:
         print(f"Serial error: {e}")
     finally:
