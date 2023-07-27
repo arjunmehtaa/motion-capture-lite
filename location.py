@@ -154,10 +154,6 @@ def compute_z_axis_resolution(alpha: float, d: float, p: float):
 # beamer_coordinate_1 = Point(3, 4, 10)
 # print(calculate_z_coordinate(tag_coordinate_1, beamer_coordinate_1, 30, True))
 
-def read_bitstream(port: str, baud_rate: int):
-    data = read_from_microcontroller(port=port, baud_rate=baud_rate)
-    return data
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Read data from microcontroller.')
     parser.add_argument('--port', type=str, help='Serial port of the microcontroller (e.g., COM5 or /dev/ttyUSB1)')
