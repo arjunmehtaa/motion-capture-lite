@@ -231,6 +231,8 @@ if __name__ == "__main__":
     port = args.port
     baud_rate = args.baud_rate
 
+    number_of_tags = 2
+
     if args.port:
         try:
             # Open the serial connection
@@ -240,27 +242,42 @@ if __name__ == "__main__":
             print(f"Reading from microcontroller on {port}...")
 
             # Read data until user interrupts the program (Ctrl+C)
+            sync_found = False;
+            tags_found = 0
             while True:
-                data = ser.readline().strip()
-                try:
-                    decoded_data = data.decode('utf-8').strip()
-                    if decoded_data == 'x':  # terminate tag's input
-                        # don't know beamer positions
-                        print(get_tag_location(current_input.split(''), []))
-                        current_input = ''
-                    elif decoded_data is not None:
-                        current_input += decoded_data
-                    print(current_input)
-                except UnicodeDecodeError:
-                    # decoding failed
+                data = ser.readline().strip() # a111x
+                decoded_data = data.decode('utf-8').strip()
+
+                # if decoded data contains SYNC, then we have a new input
+                if not sync_found and decoded_data.startswith("SYNC: 1"):
+                    print("===")
+                    sync_found = True
+                    tags_found = 0
                     continue
+                
+                if sync_found:
+                    if decoded_data.startswith("SYNC: 0"):
+                        continue
+                    try:
+                        output = ""
+                        locations = list(map(int, decoded_data[1:4])) # [1, 1, 1]
+                        output += str(get_region(locations, 0, 0, 7, True))
+                        tags_found += 1
+                        if tags_found >= number_of_tags:
+                            sync_found = False
+                            tags_found = 0
+                        print(output)
+
+                    except:
+                        print("DECODING FAILED: " + str(data))
+                        continue
 
         except KeyboardInterrupt:
             print("\nSerial communication stopped by the user.")
         except serial.SerialException as e:
             print(f"Serial error: {e}")
         finally:
-            if ser.is_open:
+            if ser and ser.is_open:
                 ser.close()
     else:
         print("Please provide the serial port with --port argument.")

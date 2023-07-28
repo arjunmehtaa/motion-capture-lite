@@ -1,19 +1,40 @@
-const int enableInPin = 12;
-const int enableOutPin = 2;
-const int ledOutPins[] = {14, 12, 13, 15};
+const int interruptIn = 2;
+const int interruptOut = 16;
+const int ledOutPins[] = {12, 13, 14};
 
-const int ledActiveTimePeriod = 5000; // match this to timePeriod of TAG
-const int transitionDelayTimePeriod = 2000;
+const int ledActiveTimePeriod = 1000; // match this to timePeriod of TAG
+const int transitionDelayTimePeriod = 20;
 
-const int numLeds = 4;
-const int numTransitionDelays = 2; // Assuming we delay once after enable input and once after all location LEDs are done projecting
+const int numLeds = 3;
+const int numTransitionDelays = 1; // Assuming we delay once after enable input and once after all location LEDs are done projecting
 const int totalMeasurementTime = (numLeds * ledActiveTimePeriod) + (numTransitionDelays * transitionDelayTimePeriod);
 bool startReading = false;
 
+#define KEEP_LED_ON -1
+
+int count;
+bool trigger;
+
+void IRAM_ATTR ISR() {
+  count++;
+  if (count % 2 == 0) {
+    digitalWrite(0, HIGH);
+  } else {
+    digitalWrite(0, LOW);
+  }
+  trigger = true;
+}
+
 void setup() {
   Serial.begin(9600);
-  // pinMode(enableInPin, INPUT);
-  // pinMode(enableOutPin, OUTPUT);
+
+  count = 0;
+  trigger = false;
+  attachInterrupt(digitalPinToInterrupt(interruptIn), ISR, CHANGE);
+
+  pinMode(interruptOut, OUTPUT);
+  pinMode(0, OUTPUT);
+
   for(int i  = 0; i < numLeds; i++) {
     pinMode(ledOutPins[i], OUTPUT);
   }
@@ -24,7 +45,10 @@ unsigned long ledStartTime;
 int i;
 
 void turnOneLEDOn(int p) {
-  p = 1; // force 1 to be on
+  if (KEEP_LED_ON >= 0) {
+    p = KEEP_LED_ON;
+  }
+
   Serial.print("Turn on ");
   Serial.println(p);
   for (int i = 0; i < numLeds; i++) {
@@ -38,7 +62,7 @@ void turnOneLEDOn(int p) {
 
 void loop() {
   
-  if(!startReading) { // digitalRead(enableInPin) == HIGH
+  if(!startReading && trigger) { // digitalRead(enableInPin) == HIGH
     delay(transitionDelayTimePeriod);
     startReading = true;
     measurementStartTime = millis();
@@ -61,8 +85,15 @@ void loop() {
     }
     if((currentMillis - measurementStartTime) >= (totalMeasurementTime)) {
       startReading = false;
+      trigger = false;
       i = 0;
       turnOneLEDOn(-1); // turn off all LEDs
+
+        if (count % 2 == 0) {
+          digitalWrite(interruptOut, HIGH);
+        } else {
+          digitalWrite(interruptOut, LOW);
+        }
     }
   }
 }
