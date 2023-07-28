@@ -231,7 +231,7 @@ if __name__ == "__main__":
     port = args.port
     baud_rate = args.baud_rate
 
-    number_of_tags = 3
+    number_of_tags = 2
 
     if args.port:
         try:
@@ -249,16 +249,17 @@ if __name__ == "__main__":
                 decoded_data = data.decode('utf-8').strip()
 
                 # if decoded data contains SYNC, then we have a new input
-                if not sync_found and decoded_data.startswith("SYNC"):
-                    print("SYNC")
+                if not sync_found and decoded_data.startswith("SYNC: 1"):
+                    print("===")
                     sync_found = True
                     tags_found = 0
                     continue
                 
                 if sync_found:
+                    if decoded_data.startswith("SYNC: 0"):
+                        continue
                     try:
                         output = ""
-                        output += "TAG " + str(decoded_data[0]) + ": "
                         locations = list(map(int, decoded_data[1:4])) # [1, 1, 1]
                         output += str(get_region(locations, 0, 0, 7, True))
                         tags_found += 1
