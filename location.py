@@ -231,7 +231,7 @@ if __name__ == "__main__":
     port = args.port
     baud_rate = args.baud_rate
 
-    number_of_tags = 2
+    number_of_tags = 3
 
     if args.port:
         try:
@@ -247,29 +247,33 @@ if __name__ == "__main__":
             while True:
                 data = ser.readline().strip() # a111x
                 decoded_data = data.decode('utf-8').strip()
+                # print("DEBUG: " + decoded_data)
 
                 # if decoded data contains SYNC, then we have a new input
-                if not sync_found and decoded_data.startswith("SYNC: 1"):
+                if not sync_found and decoded_data.startswith("SYNC:"):
                     print("===")
                     sync_found = True
                     tags_found = 0
                     continue
                 
                 if sync_found:
-                    if decoded_data.startswith("SYNC: 0"):
-                        continue
-                    try:
-                        output = ""
-                        locations = list(map(int, decoded_data[1:4])) # [1, 1, 1]
-                        output += str(get_region(locations, 0, 0, 7, True))
-                        tags_found += 1
-                        if tags_found >= number_of_tags:
-                            sync_found = False
-                            tags_found = 0
-                        print(output)
+                    # if it starts with a, b or c, then it's a tag
+                    if decoded_data.startswith("a") or decoded_data.startswith("b") or decoded_data.startswith("c"):
+                        try:
+                            output = ""
+                            locations = list(map(int, decoded_data[1:4])) # [1, 1, 1]
+                            output += str(get_region(locations, 0, 0, 7, True))
+                            tags_found += 1
+                            if tags_found >= number_of_tags:
+                                sync_found = False
+                                tags_found = 0
+                            print(output)
 
-                    except:
-                        print("DECODING FAILED: " + str(data))
+                        except:
+                            print("DECODING FAILED: " + str(data))
+                            continue
+                    else:
+                        # print("INVALID DATA: " + str(data))
                         continue
 
         except KeyboardInterrupt:

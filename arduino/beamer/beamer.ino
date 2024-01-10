@@ -3,7 +3,7 @@ const int interruptOut = 16;
 const int ledOutPins[] = {12, 13, 14};
 
 const int ledActiveTimePeriod = 1000; // match this to timePeriod of TAG
-const int transitionDelayTimePeriod = 20;
+const int transitionDelayTimePeriod = 50;
 
 const int numLeds = 3;
 const int numTransitionDelays = 1; // Assuming we delay once after enable input and once after all location LEDs are done projecting
@@ -17,6 +17,7 @@ bool trigger;
 
 void IRAM_ATTR ISR() {
   count++;
+  Serial.println(count);
   if (count % 2 == 0) {
     digitalWrite(0, HIGH);
   } else {
@@ -88,12 +89,12 @@ void loop() {
       trigger = false;
       i = 0;
       turnOneLEDOn(-1); // turn off all LEDs
+      if (count % 2 == 0) {
+        digitalWrite(interruptOut, HIGH);
+      } else {
+        digitalWrite(interruptOut, LOW);
+      }
 
-        if (count % 2 == 0) {
-          digitalWrite(interruptOut, HIGH);
-        } else {
-          digitalWrite(interruptOut, LOW);
-        }
     }
   }
 }
