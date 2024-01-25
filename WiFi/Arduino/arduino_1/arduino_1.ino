@@ -1,10 +1,9 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-const char* ssid     = "OnePlus 11";
-const char* password = "Arjun123";
+const char* ssid     = "KevinsPixel";
+const char* password = "kevin123";
 
-const char* host = "192.168.75.154";
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  // local port to listen on
 unsigned int portToSend = 5000;
@@ -13,7 +12,7 @@ char  replyPacket[] = "Hello from Arduino 1!";  // a reply string to send back
 
 
 void setup() {
-  Serial.begin(19200);
+  Serial.begin(115200);
   delay(100);
   pinMode(0, OUTPUT);
   // turn LED ON by default
@@ -26,8 +25,8 @@ void setup() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
-  IPAddress local_ip(192, 168, 75, 11);
-  IPAddress gateway(192, 168, 75, 77);
+  IPAddress local_ip(192, 168, 132, 11);
+  IPAddress gateway(192, 168, 132, 77);
   IPAddress subnet(255, 255, 255, 0);
   WiFi.config(local_ip, gateway, subnet);
   WiFi.begin(ssid, password);
