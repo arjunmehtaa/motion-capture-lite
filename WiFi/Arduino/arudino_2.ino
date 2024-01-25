@@ -15,6 +15,9 @@ char  replyPacket[] = "Hello from Arduino 2!";  // a reply string to send back
 void setup() {
   Serial.begin(19200);
   delay(100);
+  pinMode(0, OUTPUT);
+  // turn LED OFF by default
+  digitalWrite(0, HIGH);
 
   // We start by connecting to a WiFi network
 
@@ -36,6 +39,8 @@ void setup() {
 
   Serial.println("");
   Serial.println("WiFi connected");  
+  // turn LED ON when WiFi is connected
+  digitalWrite(0, LOW);
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   uint16 ab = Udp.begin(localUdpPort);
@@ -65,5 +70,16 @@ void loop() {
     Udp.beginPacket(Udp.remoteIP(), portToSend);
     Udp.write(replyPacket);
     Udp.endPacket();
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    // turn LED OFF if WiFi is disconnected
+    digitalWrite(0, HIGH);
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
+    // turn LED ON when WiFi restores
+    digitalWrite(0, LOW);
   }
 }
