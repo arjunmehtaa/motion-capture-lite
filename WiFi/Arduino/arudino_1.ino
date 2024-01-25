@@ -9,7 +9,7 @@ WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  // local port to listen on
 unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
-char  replyPacket[] = "Hello from Arduino 2!";  // a reply string to send back
+char  replyPacket[] = "Hello from Arduino 1!";  // a reply string to send back
 
 
 void setup() {
@@ -23,7 +23,7 @@ void setup() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
-  IPAddress local_ip(192, 168, 75, 12);
+  IPAddress local_ip(192, 168, 75, 11);
   IPAddress gateway(192, 168, 75, 77);
   IPAddress subnet(255, 255, 255, 0);
   WiFi.config(local_ip, gateway, subnet);
