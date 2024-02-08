@@ -7,7 +7,8 @@ const char* password = "qybmo02053";
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  // local port to listen on
 unsigned int portToSend = 5000;
-char incomingPacket[120];  // buffer for incoming packets
+char incomingPacket[5];  // buffer for incoming packets
+char  replyPacket[2] = "1";
 
 
 void setup() {
@@ -43,28 +44,30 @@ void setup() {
   Serial.println(WiFi.localIP());
   uint16 ab = Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d, %d\n", WiFi.localIP().toString().c_str(), localUdpPort, ab);
+  digitalWrite(0, LOW);
 }
 
 int value = 0;
 
 void loop() {
-  ++value;
   int packetSize = Udp.parsePacket();
+  if (value >= 100) {
+    digitalWrite(0, HIGH);
+  }
 
   if (packetSize)
   {
     // receive incoming UDP packets
-    digitalWrite(0, LOW);
 
     // Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-    int len = Udp.read(incomingPacket, 255);
+    int len = Udp.read(incomingPacket, 5);
     if (len > 0)
     {
       incomingPacket[len] = 0;
+      value+=1;
     }
     // Serial.printf("UDP packet contents: %s\n", incomingPacket);
-    char  replyPacket[250];
-    sprintf(replyPacket, "UDP packet contents: %s\n", incomingPacket);  // a reply string to send back
+    // sprintf(replyPacket, "UDP packet contents: %s\n", incomingPacket);  // a reply string to send back
     // strcat(replyPacket, incomingPacket);
     // char newLine[] = "\n";
     // strcat(replyPacket, newLine);
@@ -72,10 +75,10 @@ void loop() {
     // Serial.printf("Remote IP: %d, Remote Port: %d\n", Udp.remoteIP(), Udp.remotePort());
 
     // send back a reply, to the IP address and port we got the packet from
-    Udp.beginPacket(Udp.remoteIP(), portToSend);
-    Udp.write(replyPacket);
-    Udp.endPacket();
-    digitalWrite(0, HIGH);
+    // Udp.beginPacket(Udp.remoteIP(), portToSend);
+    // Udp.write(replyPacket);
+    // Udp.endPacket();
+    // digitalWrite(0, HIGH);
   }
 
   // if (WiFi.status() != WL_CONNECTED) {

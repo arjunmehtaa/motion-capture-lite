@@ -6,7 +6,7 @@ import queue
 sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock_listen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-udp_hosts = ["192.168.0.11"]
+udp_hosts = ["192.168.0.11", "192.168.0.12"]
 sending_udp_port = 4210
 listening_udp_port = 5000
 counter = 1
@@ -18,11 +18,11 @@ message_queue = queue.Queue()
 
 def send_messages(udp_hosts, sending_udp_port):
     counter = 0
-    while True:
-        time.sleep(0.03)
+    while counter<101:
+        time.sleep(5/1000)
         try:
 
-            msg = "Hello from Python: " + str(counter)
+            msg = str(counter)
             for udp_host in udp_hosts:
                 sock_send.sendto(msg.encode(), (udp_host, sending_udp_port))
             counter += 1
@@ -32,20 +32,30 @@ def send_messages(udp_hosts, sending_udp_port):
             break
 
 def message_handler():
+    message_received_counter = 0
     while True:
-        # Get a job from the queue
-        data, addr = message_queue.get()
-        try:
-            print("Received Message:", data.decode(), "from", addr)
-        except Exception:
-            continue
+        if not message_queue.empty():
+            print(message_received_counter)
+            # Get a job from the queue
+            data, addr = message_queue.get()
+            try:
+                # print("Received Message:", data.decode(), "from", addr)
+                message_received_counter+=1
+                # print("190")
+            except Exception:
+                continue
 
 
 def receive_messages():
+    counter = 0
     while True:
         try:
             data, addr = sock_listen.recvfrom(1024)
-            message_queue.put({data, addr})
+            counter+=1
+            print(counter)
+            # print("Received Message:", data.decode(), "from", addr)
+            # message_queue.put({data, addr})
+
         except KeyboardInterrupt:
             print("Exiting receive_messages thread")
             sock_listen.close()
@@ -55,16 +65,20 @@ def receive_messages():
 
 # Create and start threads for sending and receiving messages
 send_thread = threading.Thread(target=send_messages, args=(udp_hosts, sending_udp_port))
-receive_thread = threading.Thread(target=receive_messages)
 
-message_handler_thread = threading.Thread(target= message_handler, daemon=True)
+for i in range(10):
+    receive_thread = threading.Thread(target=receive_messages)
+    receive_thread.start()
+
+message_handler_thread = threading.Thread(target= message_handler)
 
 try:
+    # message_handler_thread.start()
+    # receive_thread.start()
     message_handler_thread.start()
-    receive_thread.start()
     send_thread.start()
 finally:
     # Join threads to wait for them to finish (this won't happen as they run indefinitely)
     send_thread.join()
-    receive_thread.join()
-    message_handler_thread.join()
+    # receive_thread.join()
+    # message_handler_thread.join()
