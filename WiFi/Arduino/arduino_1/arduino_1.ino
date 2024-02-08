@@ -1,14 +1,13 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-const char* ssid     = "KevinsPixel";
-const char* password = "kevin123";
+const char* ssid     = "dlink-A40C";
+const char* password = "qybmo02053";
 
 WiFiUDP Udp;
 unsigned int localUdpPort = 4210;  // local port to listen on
 unsigned int portToSend = 5000;
-char incomingPacket[255];  // buffer for incoming packets
-char  replyPacket[] = "Hello from Arduino 1!";  // a reply string to send back
+char incomingPacket[120];  // buffer for incoming packets
 
 
 void setup() {
@@ -25,8 +24,8 @@ void setup() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
-  IPAddress local_ip(192, 168, 132, 11);
-  IPAddress gateway(192, 168, 132, 77);
+  IPAddress local_ip(192, 168, 0, 11);
+  IPAddress gateway(192, 168, 0, 1);
   IPAddress subnet(255, 255, 255, 0);
   WiFi.config(local_ip, gateway, subnet);
   WiFi.begin(ssid, password);
@@ -55,30 +54,38 @@ void loop() {
   if (packetSize)
   {
     // receive incoming UDP packets
-    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+    digitalWrite(0, LOW);
+
+    // Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
     int len = Udp.read(incomingPacket, 255);
     if (len > 0)
     {
       incomingPacket[len] = 0;
     }
-    Serial.printf("UDP packet contents: %s\n", incomingPacket);
+    // Serial.printf("UDP packet contents: %s\n", incomingPacket);
+    char  replyPacket[250];
+    sprintf(replyPacket, "UDP packet contents: %s\n", incomingPacket);  // a reply string to send back
+    // strcat(replyPacket, incomingPacket);
+    // char newLine[] = "\n";
+    // strcat(replyPacket, newLine);
 
-    Serial.printf("Remote IP: %d, Remote Port: %d\n", Udp.remoteIP(), Udp.remotePort());
+    // Serial.printf("Remote IP: %d, Remote Port: %d\n", Udp.remoteIP(), Udp.remotePort());
 
     // send back a reply, to the IP address and port we got the packet from
     Udp.beginPacket(Udp.remoteIP(), portToSend);
     Udp.write(replyPacket);
     Udp.endPacket();
-  }
-
-  if (WiFi.status() != WL_CONNECTED) {
-    // turn LED ON if WiFi is disconnected
-    digitalWrite(0, LOW);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-    // turn LED OFF when WiFi restores
     digitalWrite(0, HIGH);
   }
+
+  // if (WiFi.status() != WL_CONNECTED) {
+  //   // turn LED ON if WiFi is disconnected
+  //   digitalWrite(0, LOW);
+  //   while (WiFi.status() != WL_CONNECTED) {
+  //     delay(500);
+  //     Serial.print(".");
+  //   }
+  //   // turn LED OFF when WiFi restores
+  //   digitalWrite(0, HIGH);
+  // }
 }
