@@ -46,13 +46,14 @@ impl Default for MyApp {
 }
 
 impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Check for signals from the channel and update the value accordingly
         if let Ok(_) = self.rx.try_recv() {
             self.field += 1; // Update the value in response to the signal
         }
         egui::CentralPanel::default().show(ctx, |ui| ui.label(format!("{}", self.field)));
+        // std::thread::sleep(std::time::Duration::from_millis(100));
+        ctx.request_repaint(); // Request a repaint to update the UI
 
-        // Display the current value
     }
 }
