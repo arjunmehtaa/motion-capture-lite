@@ -1,11 +1,11 @@
 use std::{
-    sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
 use crossbeam_channel::{unbounded, Receiver};
 
 use eframe::egui;
+use egui_plot::{Plot, PlotPoints, Line};
 
 fn main() {
     let options = eframe::NativeOptions::default();
@@ -15,18 +15,18 @@ fn main() {
 
 struct MyApp {
     field: i128,
-    rx: Receiver<()>, // Receiver for the channel
+    rx: Receiver<()>,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        let (tx, rx) = unbounded(); // Create a channel for communication between threads
+        let (tx, rx) = unbounded();
         let app = MyApp {
             field: 0,
             rx,
         };
 
-        // Spawn a thread to emit signals through the channel
+        // SENDING SIGNALS: Spawn a thread to emit signals through the channel
         thread::spawn(move || {
             let mut last_emit = Instant::now();
             loop {
@@ -45,15 +45,23 @@ impl Default for MyApp {
     }
 }
 
+// RECEIVING SIGNALS AND UPDATING THE UI
 impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Check for signals from the channel and update the value accordingly
         if let Ok(_) = self.rx.try_recv() {
             self.field += 1; // Update the value in response to the signal
         }
-        egui::CentralPanel::default().show(ctx, |ui| ui.label(format!("{}", self.field)));
-        // std::thread::sleep(std::time::Duration::from_millis(100));
-        ctx.request_repaint(); // Request a repaint to update the UI
+        egui::CentralPanel::default().show(ctx, |ui| {
+                ui.label(format!("{}", self.field));
 
+                ui.horizontal(|ui| {
+                    Plot::new("Field Value Over Time").height(200.0).show(ui, |ui| {
+                        ui.line(Line::new(PlotPoints::new(vec![[0.0, 0.0], [0.5, self.field as f64]])));
+                    });
+                });
+            });
+        ctx.request_repaint(); // Request a repaint to update the UI
     }
 }
