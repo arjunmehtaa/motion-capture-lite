@@ -2245,6 +2245,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_plot",
+ "rand",
 ]
 
 [[package]]
