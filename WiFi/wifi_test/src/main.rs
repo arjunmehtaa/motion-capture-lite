@@ -20,7 +20,7 @@ fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
                 .expect("Failed to send message");
         }
         counter += 1;
-        thread::sleep(Duration::from_millis(50));
+        thread::sleep(Duration::from_millis(20));
     }
 }
 
@@ -34,7 +34,7 @@ fn message_handler(q: &ConcurrentQueue<(String, SocketAddr)>) {
 }
 
 fn receive_messages(listening_udp_port: u16, q: &ConcurrentQueue<(String, SocketAddr)>) {
-    println!("starting recv thread");
+    // println!("starting recv thread");
     let socket = UdpSocket::bind(format!("0.0.0.0:{}", listening_udp_port)).expect("Failed to bind socket");
     socket.set_nonblocking(true).expect("Failed to set non-blocking");
     let mut buffer = [0; 1024];
@@ -43,17 +43,19 @@ fn receive_messages(listening_udp_port: u16, q: &ConcurrentQueue<(String, Socket
             Ok((size, addr)) => {
                 let data = String::from_utf8_lossy(&buffer[..size]);
                 let _ = q.push((data.to_string(), addr));
-                println!("Received Messages: {} from {}", data, addr);
+                // println!("Received Messages: {} from {}", data, addr);
             }
-            Err(_) => {}
+            Err(_) => {
+            }
         }
     }
 }
 
 fn main() {
-    let udp_hosts = vec!["192.168.0.11", "192.168.0.12"];
+    // let udp_hosts = vec!["192.168.0.11", "192.168.0.12"];
+    let udp_hosts = vec!["192.168.0.11"];
     let sending_udp_port = 4210;
-    let listening_udp_port = 5001;
+    let listening_udp_port = 5000;
 
     let message_queue: Arc<ConcurrentQueue<(String, SocketAddr)>> = Arc::new(ConcurrentQueue::unbounded());
 
