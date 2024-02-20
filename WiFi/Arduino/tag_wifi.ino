@@ -7,7 +7,7 @@ const int ANALOG_PIN = A0;
 /* Setup WiFi paramteres */
 const char* ssid     = "dlink-A40C";
 const char* password = "qybmo02053";
-IPAddress local_ip(192, 168, 0, 11);
+IPAddress local_ip(192, 168, 0, 12);                                                             
 IPAddress gateway(192, 168, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
 
@@ -21,7 +21,7 @@ unsigned long timeWindow = 5;
 unsigned long startTime;
 unsigned long currentTime;
 bool startReading = false;
-int inputVoltage;
+int inputVoltage = 0;
 
 void setup() {
   Serial.begin(19200);
@@ -75,10 +75,14 @@ void loop() {
     inputVoltage = max(inputVoltage, analogRead(ANALOG_PIN)); 
     if (currentTime - startTime >= timeWindow) {
       startReading = false;
-      sprintf(replyPacket, "%d", value);
+      sprintf(replyPacket, "%d: %d", inputVoltage, value);
       Udp.beginPacket(Udp.remoteIP(), portToSend);
       Udp.write(replyPacket);
       Udp.endPacket();
+      inputVoltage = 0;
+      if(value >= 5) { 
+        value = -1;
+      }
     }
   }
 }
