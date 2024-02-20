@@ -10,8 +10,9 @@ use std::sync::Arc;
 fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
     thread::sleep(Duration::from_millis(1000));
     let mut counter = 0;
+    let NUM_LEDS = 6;
     println!("starting send thread");
-    while counter < 101 {
+    while true {
         for udp_host in &udp_hosts {
             let socket = UdpSocket::bind(format!("0.0.0.0:{}", sending_udp_port)).expect("Failed to bind socket");
             socket.set_nonblocking(true).expect("Failed to set non-blocking");
@@ -19,8 +20,8 @@ fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
             socket.send_to(msg.as_bytes(), format!("{}:{}", udp_host, sending_udp_port))
                 .expect("Failed to send message");
         }
-        counter += 1;
-        thread::sleep(Duration::from_millis(20));
+        counter = (counter+1) % NUM_LEDS;
+        thread::sleep(Duration::from_millis(10));
     }
 }
 
@@ -28,7 +29,7 @@ fn message_handler(q: &ConcurrentQueue<(String, SocketAddr)>) {
     loop {
         if !q.is_empty() {
             let pair = q.pop().unwrap();
-            println!("Received Messages: {} from {}", pair.0, pair.1);
+            println!("{}, {}", pair.0, pair.1);
         }
     }
 }
@@ -52,8 +53,8 @@ fn receive_messages(listening_udp_port: u16, q: &ConcurrentQueue<(String, Socket
 }
 
 fn main() {
-    // let udp_hosts = vec!["192.168.0.11", "192.168.0.12"];
-    let udp_hosts = vec!["192.168.0.11"];
+    let udp_hosts = vec!["192.168.0.11", "192.168.0.12"];
+    // let udp_hosts = vec!["192.168.0.11"];
     let sending_udp_port = 4210;
     let listening_udp_port = 5000;
 
