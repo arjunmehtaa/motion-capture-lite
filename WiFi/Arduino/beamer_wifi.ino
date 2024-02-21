@@ -1,6 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
+int LED_GPIOS[6] = {4, 5, 2, 16, 0, 15};
+
 /* Assign pins */
 const int ANALOG_PIN = A0;
 
@@ -40,7 +42,7 @@ void setup() {
   WiFi.begin(ssid, password);
   
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(100);
     Serial.print(".");
   }
 
@@ -51,14 +53,21 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   uint16 ab = Udp.begin(portToListen);
-  Serial.printf("Now listening at IP %s, UDP port %d, %d\n", WiFi.localIP().toString().c_str(), portToListen, ab);
+  // Serial.printf("Now listening at IP %s, UDP port %d, %d\n", WiFi.localIP().toString().c_str(), portToListen, ab);
+
+  int i;
+  for (i=0;i<6;i++){
+    pinMode(LED_GPIOS[i], OUTPUT); // Set the pin as an OUTPUT
+  }
 }
 
 int value = -1;
+int ledId = 0;
 
 void loop() {
   currentTime = millis();
   int packetSize = Udp.parsePacket();
+
   if (packetSize) {
     // receive incoming UDP packets
     value += 1;
@@ -69,16 +78,24 @@ void loop() {
     if (len > 0) {
       incomingPacket[len] = 0;
     }
-    Serial.printf("UDP packet contents: %s\n", incomingPacket[0].toInt());
+    if (len >= 1) {
+      ledId = incomingPacket[0] - '0';
+      // Serial.printf("UDP packet contents: %d\n", ledId);
+      digitalWrite(LED_GPIOS[ledId], HIGH);
+    } else {
+      Serial.printf("Not received");
+    }
+    
   }
+
   if(startReading) {
     inputVoltage = max(inputVoltage, analogRead(ANALOG_PIN)); 
     if (currentTime - startTime >= timeWindow) {
       startReading = false;
-      sprintf(replyPacket, "%d", value);
-      Udp.beginPacket(Udp.remoteIP(), portToSend);
-      Udp.write(replyPacket);
-      Udp.endPacket();
+      digitalWrite(LED_GPIOS[ledId], LOW);
+      // Udp.beginPacket(Udp.remoteIP(), portToSend);/
+      // Udp.write(replyPacket);/
+      // Udp.endPacket();
     }
   }
 }
