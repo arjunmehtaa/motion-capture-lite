@@ -1,7 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-int NUM_LEDS = 6;
+const int NUM_LEDS = 6;
 int LED_GPIOS[NUM_LEDS] = {4, 5, 2, 16, 0, 15};
 
 /* Setup WiFi paramteres */
@@ -61,7 +61,7 @@ void setup() {
 
 int value = -1;
 int ledId = 0;
-int cycleCounter = 0
+int cycleCounter = 0;
 
 void loop() {
   currentTime = millis();
@@ -76,7 +76,7 @@ void loop() {
     ledId = 0;
     digitalWrite(LED_GPIOS[ledId], HIGH);
   }
-  else if cycleCounter>0 && (current_time - startTime)>=cycleWindow {
+  else if (cycleCounter > 0 && (currentTime - startTime) >= cycleWindow) {
     // set next led if cycleWindow millis have passed since last led update
     startReading = true;
     cycleCounter = (cycleCounter+1) % NUM_LEDS;
