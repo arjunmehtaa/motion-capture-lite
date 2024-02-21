@@ -1,10 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-int LED_GPIOS[6] = {4, 5, 2, 16, 0, 15};
-
-/* Assign pins */
-const int ANALOG_PIN = A0;
+int NUM_LEDS = 6;
+int LED_GPIOS[NUM_LEDS] = {4, 5, 2, 16, 0, 15};
 
 /* Setup WiFi paramteres */
 const char* ssid     = "dlink-A40C";
@@ -20,10 +18,10 @@ unsigned int portToListen = 4210;  // local port to listen on
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[20];
 unsigned long timeWindow = 5;
+unsigned long cycleWindow = 10;
 unsigned long startTime;
 unsigned long currentTime;
 bool startReading = false;
-int inputVoltage;
 
 void setup() {
   Serial.begin(19200);
@@ -56,46 +54,41 @@ void setup() {
   // Serial.printf("Now listening at IP %s, UDP port %d, %d\n", WiFi.localIP().toString().c_str(), portToListen, ab);
 
   int i;
-  for (i=0;i<6;i++){
+  for (i=0;i<NUM_LEDS;i++){
     pinMode(LED_GPIOS[i], OUTPUT); // Set the pin as an OUTPUT
   }
 }
 
 int value = -1;
 int ledId = 0;
+int cycleCounter = 0
 
 void loop() {
   currentTime = millis();
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
-    // receive incoming UDP packets
+    // received a UDP packet, start light cycle
     value += 1;
-    // Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
     startReading = true;
     startTime = currentTime;
-    int len = Udp.read(incomingPacket, 255);
-    if (len > 0) {
-      incomingPacket[len] = 0;
-    }
-    if (len >= 1) {
-      ledId = incomingPacket[0] - '0';
-      // Serial.printf("UDP packet contents: %d\n", ledId);
-      digitalWrite(LED_GPIOS[ledId], HIGH);
-    } else {
-      Serial.printf("Not received");
-    }
-    
+    cycleCounter = 1; // so we go into else if block once cycle time has been reached
+    ledId = 0;
+    digitalWrite(LED_GPIOS[ledId], HIGH);
+  }
+  else if cycleCounter>0 && (current_time - startTime)>=cycleWindow {
+    // set next led if cycleWindow millis have passed since last led update
+    startReading = true;
+    cycleCounter = (cycleCounter+1) % NUM_LEDS;
+    startTime = currentTime;
+    ledId = (ledId+1) % NUM_LEDS;
+    digitalWrite(LED_GPIOS[ledId], HIGH);
   }
 
   if(startReading) {
-    inputVoltage = max(inputVoltage, analogRead(ANALOG_PIN)); 
     if (currentTime - startTime >= timeWindow) {
       startReading = false;
       digitalWrite(LED_GPIOS[ledId], LOW);
-      // Udp.beginPacket(Udp.remoteIP(), portToSend);/
-      // Udp.write(replyPacket);/
-      // Udp.endPacket();
     }
   }
 }
