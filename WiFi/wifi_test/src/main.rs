@@ -21,7 +21,7 @@ fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
                 .expect("Failed to send message");
         }
         counter = (counter+1) % NUM_LEDS;
-        thread::sleep(Duration::from_millis(10));
+        thread::sleep(Duration::from_millis(60));
     }
 }
 
