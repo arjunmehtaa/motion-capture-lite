@@ -20,8 +20,8 @@ unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[380];
 char currentPacket[60];
-unsigned long timeWindow = 120;
-unsigned long readingWindow = 60;
+unsigned long timeWindow = 10;
+unsigned long readingWindow = 6;
 unsigned long delayStartTime;
 unsigned long delayEndTime;
 unsigned long timeDelay = (timeWindow - readingWindow) / 2;

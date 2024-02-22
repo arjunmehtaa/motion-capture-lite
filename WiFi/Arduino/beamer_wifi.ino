@@ -17,11 +17,13 @@ unsigned int portToListen = 4210;  // local port to listen on
 // unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[20];
-unsigned long timeWindow = 5;
-unsigned long cycleWindow = 10;
+unsigned long timeWindow = 120;
+// unsigned long cycleWindow = 10;
 unsigned long startTime;
 unsigned long currentTime;
+unsigned long timeDelay = 10;
 bool startReading = false;
+bool startDelay = false;
 
 void setup() {
   Serial.begin(19200);
@@ -59,36 +61,45 @@ void setup() {
   }
 }
 
-int value = -1;
 int ledId = 0;
-int cycleCounter = 0;
+// int cycleCounter = 0;
+int counter;
 
 void loop() {
   currentTime = millis();
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
+    // Serial.println("Received!");
     // received a UDP packet, start light cycle
-    value += 1;
     startReading = true;
     startTime = currentTime;
-    cycleCounter = 1; // so we go into else if block once cycle time has been reached
+    startDelay = true;
+    // cycleCounter = 1; // so we go into else if block once cycle time has been reached
     ledId = 0;
-    digitalWrite(LED_GPIOS[ledId], HIGH);
-  }
-  else if (cycleCounter > 0 && (currentTime - startTime) >= cycleWindow) {
-    // set next led if cycleWindow millis have passed since last led update
-    startReading = true;
-    cycleCounter = (cycleCounter+1) % NUM_LEDS;
-    startTime = currentTime;
-    ledId = (ledId+1) % NUM_LEDS;
-    digitalWrite(LED_GPIOS[ledId], HIGH);
+    // digitalWrite(LED_GPIOS[ledId], HIGH);
   }
 
+
   if(startReading) {
-    if (currentTime - startTime >= timeWindow) {
-      startReading = false;
+    if(startDelay && ((currentTime - startTime) >= timeDelay)) {
+      // digitalWrite(LED_GPIOS[ledId], HIGH);
+      if(ledId % 2 == 0) {
+        digitalWrite(LED_GPIOS[ledId], HIGH);
+      }
+      startDelay = false;
+    }
+    if ((currentTime - startTime) >= (timeWindow - timeDelay)) {
+      startTime = startTime + timeWindow;
+      // Serial.printf("Turning OFF LED %d\n", ledId);
       digitalWrite(LED_GPIOS[ledId], LOW);
+      if(ledId >= NUM_LEDS - 1) {
+        startReading = false;
+      } else {
+        ledId += 1;
+        // Serial.printf("Turning ON LED %d\n", ledId);
+      }
+      startDelay = true;
     }
   }
 }
