@@ -2,6 +2,7 @@
 #include <WiFiUdp.h>
 
 const int NUM_LEDS = 6;
+int ledArr[NUM_LEDS];
 
 /* Assign pins */
 const int ANALOG_PIN = A0;
@@ -20,8 +21,8 @@ unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[380];
 char currentPacket[60];
-unsigned long timeWindow = 100;
-unsigned long readingWindow = 40;
+unsigned long timeWindow = 10;
+unsigned long readingWindow = 2;
 unsigned long delayStartTime;
 unsigned long delayEndTime;
 unsigned long timeDelay = (timeWindow - readingWindow) / 2;
@@ -59,6 +60,8 @@ void setup() {
   Serial.println(WiFi.localIP());
   uint16 ab = Udp.begin(portToListen);
   Serial.printf("Now listening at IP %s, UDP port %d, %d\n", WiFi.localIP().toString().c_str(), portToListen, ab);
+
+  memset(ledArr, 0, sizeof(ledArr));
 }
 
 int value = -1;
@@ -69,7 +72,7 @@ void loop() {
   if (packetSize) {
     // receive incoming UDP packets
     value = 0;
-    Serial.println("Received");
+    // Serial.println("Received");
     // Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
     startReading = true;
     startTime = currentTime;
@@ -85,18 +88,19 @@ void loop() {
       startTime = startTime + timeWindow;
       delayStartTime = startTime + timeDelay;
       delayEndTime = startTime + timeWindow - timeDelay;
-      if(value == 5) {
-        sprintf(currentPacket, "%d:%d", value, inputVoltage);
-      } else {
-        sprintf(currentPacket, "%d:%d,", value, inputVoltage);
-      }
-      strcat(replyPacket, currentPacket);
+      // sprintf(currentPacket, "%d:%d", value, inputVoltage);
+      ledArr[value] = inputVoltage;
       inputVoltage = 0;
       if(value == NUM_LEDS - 1) {
         startReading = false;
+        for (int i = 0; i < NUM_LEDS; i++) {
+          // strcat(replyPacket, itoa(ledArr[i], 10));
+          sprintf(replyPacket, "%s%d ", replyPacket, ledArr[i]);
+        }
         Udp.beginPacket(Udp.remoteIP(), portToSend);
         Udp.write(replyPacket);
         Udp.endPacket();
+        memset(ledArr, 0, sizeof(ledArr));
         memset(replyPacket, 0, sizeof(replyPacket));
       } else {
         value += 1;

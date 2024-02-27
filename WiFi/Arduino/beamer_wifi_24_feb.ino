@@ -17,10 +17,10 @@ unsigned int portToListen = 4210;  // local port to listen on
 // unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[20];
-unsigned long timeWindow = 100;
+unsigned long timeWindow = 10;
 // unsigned long cycleWindow = 10;
 
-unsigned long readingWindow = 80;
+unsigned long readingWindow = 6;
 unsigned long timeDelay = (timeWindow - readingWindow) / 2;
 unsigned long startTime;
 unsigned long currentTime;
@@ -61,6 +61,7 @@ void setup() {
   int i;
   for (i=0;i<NUM_LEDS;i++){
     pinMode(LED_GPIOS[i], OUTPUT); // Set the pin as an OUTPUT
+    digitalWrite(LED_GPIOS[i], LOW);
   }
 }
 
@@ -74,7 +75,7 @@ void loop() {
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
-    Serial.println("Received!");
+    // Serial.printf("R %d,%u\n", ledId, currentTime);
     // received a UDP packet, start light cycle
     
     startTime = currentTime;
@@ -84,15 +85,17 @@ void loop() {
     // cycleCounter = 1; // so we go into else if block once cycle time has been reached
     ledId = 0;
     // digitalWrite(LED_GPIOS[ledId], HIGH);
-    Serial.println("Delay started");
+    // Serial.println("Delay started");
 
   }
 
 
   if(startDelay && (currentTime - startTime >= timeDelay)) {
-      Serial.println("Delay finished");
-      Serial.printf("Turning on LED %d\n", ledId);
-      digitalWrite(LED_GPIOS[ledId], HIGH);
+      // Serial.println("Delay finished");
+      // Serial.printf("Turning on LED %d\n", ledId);
+      if(ledId % 2 == 0) {
+        digitalWrite(LED_GPIOS[ledId], HIGH);
+      }
       startDelay = false;
       startTime = currentTime;
       startReading = true;
@@ -101,7 +104,7 @@ void loop() {
   if(startReading) {
     if (currentTime - startTime >= readingWindow) {
       digitalWrite(LED_GPIOS[ledId], LOW);
-      Serial.printf("Turning OFF LED %d\n", ledId);
+      // Serial.printf("Turning OFF LED %d\n", ledId);
       startReading = false;
       if(ledId == 0) {
         timeDelay *= 2;
@@ -109,10 +112,11 @@ void loop() {
       if(ledId >= NUM_LEDS - 1) {
         timeDelay /= 2;
         startDelay = false;
+        ledId = 0;
       } else {
         ledId += 1;
         startDelay = true;
-        Serial.printf("2 Delays started %u\n", timeDelay);
+        // Serial.printf("2 Delays started %u\n", timeDelay);
       }
       startTime = currentTime; 
     }
