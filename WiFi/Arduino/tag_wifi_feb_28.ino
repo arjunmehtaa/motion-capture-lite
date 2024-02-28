@@ -21,8 +21,8 @@ unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[380];
 char currentPacket[60];
-unsigned long timeWindow = 10;
-unsigned long readingWindow = 2;
+unsigned long timeWindow = 20;
+unsigned long readingWindow = 6;
 unsigned long delayStartTime;
 unsigned long delayEndTime;
 unsigned long timeDelay = (timeWindow - readingWindow) / 2;
@@ -40,6 +40,7 @@ void setup() {
 
   // We start by connecting to a WiFi network
 
+  Serial.printf("Time window: %u, Reading window: %u\n", timeWindow, readingWindow);
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
@@ -91,12 +92,13 @@ void loop() {
       // sprintf(currentPacket, "%d:%d", value, inputVoltage);
       ledArr[value] = inputVoltage;
       inputVoltage = 0;
-      if(value == NUM_LEDS - 1) {
+      if(value >= NUM_LEDS - 1) {
         startReading = false;
         for (int i = 0; i < NUM_LEDS; i++) {
           // strcat(replyPacket, itoa(ledArr[i], 10));
           sprintf(replyPacket, "%s%d ", replyPacket, ledArr[i]);
         }
+        value = 0;
         Udp.beginPacket(Udp.remoteIP(), portToSend);
         Udp.write(replyPacket);
         Udp.endPacket();

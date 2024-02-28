@@ -17,10 +17,10 @@ unsigned int portToListen = 4210;  // local port to listen on
 // unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[20];
-unsigned long timeWindow = 10;
+unsigned long timeWindow = 20;
 // unsigned long cycleWindow = 10;
 
-unsigned long readingWindow = 6;
+unsigned long readingWindow = 10;
 unsigned long timeDelay = (timeWindow - readingWindow) / 2;
 unsigned long startTime;
 unsigned long currentTime;
@@ -31,6 +31,7 @@ bool startDelay = false;
 void setup() {
   Serial.begin(19200);
   pinMode(0, OUTPUT);
+  Serial.printf("Time window: %u, Reading window: %u\n", timeWindow, readingWindow);
 
   // turn LED ON by default
   digitalWrite(0, LOW);
