@@ -21,7 +21,7 @@ fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
                 .expect("Failed to send message");
         }
         counter = (counter+1) % NUM_LEDS;
-        thread::sleep(Duration::from_millis(60));
+        thread::sleep(Duration::from_millis(1000));
     }
 }
 
@@ -29,7 +29,8 @@ fn message_handler(q: &ConcurrentQueue<(String, SocketAddr)>) {
     loop {
         if !q.is_empty() {
             let pair = q.pop().unwrap();
-            println!("{}, {}", pair.0, pair.1);
+            let values: Vec<i32> = pair.0.split_whitespace().map(|s| s.parse().unwrap()).collect();
+            println!("{:?} ", values);
         }
     }
 }
