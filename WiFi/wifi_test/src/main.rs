@@ -21,7 +21,7 @@ fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
                 .expect("Failed to send message");
         }
         counter = (counter+1) % NUM_LEDS;
-        thread::sleep(Duration::from_millis(60));
+        thread::sleep(Duration::from_millis(70));
     }
 }
 
@@ -29,7 +29,11 @@ fn message_handler(q: &ConcurrentQueue<(String, SocketAddr)>) {
     loop {
         if !q.is_empty() {
             let pair = q.pop().unwrap();
-            println!("{}, {}", pair.0, pair.1);
+            let values: Vec<i32> = pair.0.split_whitespace().map(|s| s.parse().unwrap()).collect();
+            // print values to console with each digit being padded to 3 spaces
+
+            let padded_values: Vec<String> = values.iter().map(|&num| format!("{:03}", num)).collect();
+            println!("{} : {:?} ", pair.1, padded_values);
         }
     }
 }
@@ -53,7 +57,7 @@ fn receive_messages(listening_udp_port: u16, q: &ConcurrentQueue<(String, Socket
 }
 
 fn main() {
-    let udp_hosts = vec!["192.168.0.11", "192.168.0.12"];
+    let udp_hosts = vec!["192.168.0.11", "192.168.0.12", "192.168.0.13"];
     // let udp_hosts = vec!["192.168.0.11"];
     let sending_udp_port = 4210;
     let listening_udp_port = 5000;
