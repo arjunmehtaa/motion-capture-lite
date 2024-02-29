@@ -2,6 +2,8 @@
 #include <WiFiUdp.h>
 
 const int NUM_LEDS = 6;
+const int NUM_SEQUENCES = 3;
+int ledArr[NUM_LEDS];
 
 /* Assign pins */
 const int ANALOG_PIN = A0;
@@ -9,7 +11,7 @@ const int ANALOG_PIN = A0;
 /* Setup WiFi paramteres */
 const char* ssid     = "dlink-A40C";
 const char* password = "qybmo02053";
-IPAddress local_ip(192, 168, 0, 12);                                                             
+IPAddress local_ip(192, 168, 0, 13);                                                             
 IPAddress gateway(192, 168, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
 
@@ -18,15 +20,15 @@ const char* host = "192.168.75.154";
 unsigned int portToListen = 4210;  // local port to listen on
 unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
-char replyPacket[380];
-char currentPacket[60];
-unsigned long timeWindow = 120;
-unsigned long readingWindow = 60;
+char replyPacket[100];
+unsigned long timeWindow = 10;
+unsigned long readingWindow = 4;
 unsigned long delayStartTime;
 unsigned long delayEndTime;
 unsigned long timeDelay = (timeWindow - readingWindow) / 2;
 unsigned long startTime;
 unsigned long currentTime;
+unsigned long sequenceNumber;
 bool startReading = false;
 int inputVoltage = 0;
 
@@ -36,9 +38,11 @@ void setup() {
 
   // turn LED ON by default
   digitalWrite(0, LOW);
+  sequenceNumber = 0;
 
   // We start by connecting to a WiFi network
 
+  Serial.printf("Time window: %u, Reading window: %u\n", timeWindow, readingWindow);
   Serial.print("Connecting to ");
   Serial.println(ssid);
   
@@ -59,6 +63,8 @@ void setup() {
   Serial.println(WiFi.localIP());
   uint16 ab = Udp.begin(portToListen);
   Serial.printf("Now listening at IP %s, UDP port %d, %d\n", WiFi.localIP().toString().c_str(), portToListen, ab);
+
+  memset(ledArr, 0, sizeof(ledArr));
 }
 
 int value = -1;
@@ -84,19 +90,24 @@ void loop() {
       startTime = startTime + timeWindow;
       delayStartTime = startTime + timeDelay;
       delayEndTime = startTime + timeWindow - timeDelay;
-      if(value == 5) {
-        sprintf(currentPacket, "%d:%d", value, inputVoltage);
-      } else {
-        sprintf(currentPacket, "%d:%d,", value, inputVoltage);
-      }
-      strcat(replyPacket, currentPacket);
+      ledArr[value] = inputVoltage;
       inputVoltage = 0;
-      if(value == NUM_LEDS - 1) {
+      if(value >= NUM_LEDS - 1) {
+        sequenceNumber+=1;
         startReading = false;
-        Udp.beginPacket(Udp.remoteIP(), portToSend);
-        Udp.write(replyPacket);
-        Udp.endPacket();
-        memset(replyPacket, 0, sizeof(replyPacket));
+        for (int i = 0; i < NUM_LEDS; i++) {
+          // strcat(replyPacket, itoa(ledArr[i], 10));
+          sprintf(replyPacket, "%s%d ", replyPacket, ledArr[i]);
+        }
+        value = 0;
+        if (sequenceNumber >= NUM_SEQUENCES) {
+          Udp.beginPacket(Udp.remoteIP(), portToSend);
+          Udp.write(replyPacket);
+          Udp.endPacket();
+          sequenceNumber = 0;
+          memset(replyPacket, 0, sizeof(replyPacket));
+        }
+        memset(ledArr, 0, sizeof(ledArr));
       } else {
         value += 1;
       }
