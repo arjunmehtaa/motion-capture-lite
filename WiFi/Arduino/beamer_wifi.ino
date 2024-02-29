@@ -17,17 +17,21 @@ unsigned int portToListen = 4210;  // local port to listen on
 // unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[20];
-unsigned long timeWindow = 120;
-// unsigned long cycleWindow = 10;
+
+unsigned long timeWindow = 20;
+unsigned long readingWindow = 10;
+unsigned long timeDelay = (timeWindow - readingWindow) / 2;
+
 unsigned long startTime;
 unsigned long currentTime;
-unsigned long timeDelay = 10;
+
 bool startReading = false;
 bool startDelay = false;
 
 void setup() {
   Serial.begin(19200);
   pinMode(0, OUTPUT);
+  Serial.printf("Time window: %u, Reading window: %u\n", timeWindow, readingWindow);
 
   // turn LED ON by default
   digitalWrite(0, LOW);
@@ -46,7 +50,7 @@ void setup() {
     Serial.print(".");
   }
 
-  Serial.println("");
+  Serial.printf("Delays: time window: %u, reading window: %u, time delay: %u\n", timeWindow, readingWindow, timeDelay);
   Serial.println("WiFi connected");  
   // turn LED OFF when WiFi is connected
   digitalWrite(0, HIGH);
@@ -58,48 +62,64 @@ void setup() {
   int i;
   for (i=0;i<NUM_LEDS;i++){
     pinMode(LED_GPIOS[i], OUTPUT); // Set the pin as an OUTPUT
+    digitalWrite(LED_GPIOS[i], LOW);
   }
 }
 
 int ledId = 0;
 // int cycleCounter = 0;
 int counter;
+bool firstDelay;
 
 void loop() {
   currentTime = millis();
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
-    // Serial.println("Received!");
+    // Serial.printf("R %d,%u\n", ledId, currentTime);
     // received a UDP packet, start light cycle
-    startReading = true;
+    
     startTime = currentTime;
+
     startDelay = true;
+
     // cycleCounter = 1; // so we go into else if block once cycle time has been reached
     ledId = 0;
     // digitalWrite(LED_GPIOS[ledId], HIGH);
+    // Serial.println("Delay started");
+
   }
 
 
-  if(startReading) {
-    if(startDelay && ((currentTime - startTime) >= timeDelay)) {
-      // digitalWrite(LED_GPIOS[ledId], HIGH);
+  if(startDelay && (currentTime - startTime >= timeDelay)) {
+      // Serial.println("Delay finished");
+      // Serial.printf("Turning on LED %d\n", ledId);
       if(ledId % 2 == 0) {
         digitalWrite(LED_GPIOS[ledId], HIGH);
       }
       startDelay = false;
-    }
-    if ((currentTime - startTime) >= (timeWindow - timeDelay)) {
-      startTime = startTime + timeWindow;
-      // Serial.printf("Turning OFF LED %d\n", ledId);
+      startTime = currentTime;
+      startReading = true;
+  }
+
+  if(startReading) {
+    if (currentTime - startTime >= readingWindow) {
       digitalWrite(LED_GPIOS[ledId], LOW);
+      // Serial.printf("Turning OFF LED %d\n", ledId);
+      startReading = false;
+      if(ledId == 0) {
+        timeDelay *= 2;
+      }
       if(ledId >= NUM_LEDS - 1) {
-        startReading = false;
+        timeDelay /= 2;
+        startDelay = false;
+        ledId = 0;
       } else {
         ledId += 1;
-        // Serial.printf("Turning ON LED %d\n", ledId);
+        startDelay = true;
+        // Serial.printf("2 Delays started %u\n", timeDelay);
       }
-      startDelay = true;
+      startTime = currentTime; 
     }
   }
 }
