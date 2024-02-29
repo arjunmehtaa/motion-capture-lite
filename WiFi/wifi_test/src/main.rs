@@ -7,13 +7,25 @@ use concurrent_queue::ConcurrentQueue;
 use std::sync::Arc;
 
 
-fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
+fn send_messages(sending_udp_port: u16) {
+    let tag_hosts = vec!["192.168.0.12", "192.168.0.13"];
+    let beamer_hosts = vec!["192.168.0.11", "192.168.0.14", "empty"];
+
     thread::sleep(Duration::from_millis(1000));
     let mut counter = 0;
     let NUM_LEDS = 6;
     println!("starting send thread");
+
+    let mut beamer_id = 0;
     while true {
+        let mut udp_hosts = tag_hosts.clone();
+        udp_hosts.push(beamer_hosts[beamer_id]);
+        beamer_id = (beamer_id + 1) % beamer_hosts.len();
         for udp_host in &udp_hosts {
+            // println!("Sending to: {}", udp_host);
+            if *udp_host == "empty" {
+                continue
+            }
             let socket = UdpSocket::bind(format!("0.0.0.0:{}", sending_udp_port)).expect("Failed to bind socket");
             socket.set_nonblocking(true).expect("Failed to set non-blocking");
             let msg = counter.to_string();
@@ -21,7 +33,7 @@ fn send_messages(udp_hosts: Vec<&str>, sending_udp_port: u16) {
                 .expect("Failed to send message");
         }
         counter = (counter+1) % NUM_LEDS;
-        thread::sleep(Duration::from_millis(70));
+        thread::sleep(Duration::from_millis(100));
     }
 }
 
@@ -57,7 +69,6 @@ fn receive_messages(listening_udp_port: u16, q: &ConcurrentQueue<(String, Socket
 }
 
 fn main() {
-    let udp_hosts = vec!["192.168.0.11", "192.168.0.12", "192.168.0.13"];
     // let udp_hosts = vec!["192.168.0.11"];
     let sending_udp_port = 4210;
     let listening_udp_port = 5000;
@@ -65,14 +76,14 @@ fn main() {
     let message_queue: Arc<ConcurrentQueue<(String, SocketAddr)>> = Arc::new(ConcurrentQueue::unbounded());
 
     let queue_clone = Arc::clone(&message_queue);
-    let receive_thread = thread::spawn(move || receive_messages(listening_udp_port, &queue_clone));
+    // let receive_thread = thread::spawn(move || receive_messages(listening_udp_port, &queue_clone));
 
     let queue_clone = Arc::clone(&message_queue);
-    let handle_received_value = thread::spawn(move || message_handler(&queue_clone));
+    // let handle_received_value = thread::spawn(move || message_handler(&queue_clone));
 
-    let send_thread = thread::spawn(move || send_messages(udp_hosts, sending_udp_port));
+    let send_thread = thread::spawn(move || send_messages(sending_udp_port));
 
     send_thread.join().expect("Send thread panicked");
-    receive_thread.join().expect("Receive thread panicked");
-    handle_received_value.join().expect("message handler thread panicked");
+    // receive_thread.join().expect("Receive thread panicked");
+    // handle_received_value.join().expect("message handler thread panicked");
 }
