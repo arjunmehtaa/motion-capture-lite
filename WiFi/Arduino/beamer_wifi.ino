@@ -17,11 +17,11 @@ unsigned int portToListen = 4210;  // local port to listen on
 // unsigned int portToSend = 5000;
 char incomingPacket[255];  // buffer for incoming packets
 char replyPacket[20];
+unsigned long timeWindow = 10;
+// unsigned long cycleWindow = 10;
 
-unsigned long timeWindow = 20;
-unsigned long readingWindow = 10;
+unsigned long readingWindow = 6;
 unsigned long timeDelay = (timeWindow - readingWindow) / 2;
-
 unsigned long startTime;
 unsigned long currentTime;
 
@@ -50,7 +50,7 @@ void setup() {
     Serial.print(".");
   }
 
-  Serial.printf("Delays: time window: %u, reading window: %u, time delay: %u\n", timeWindow, readingWindow, timeDelay);
+  Serial.println("");
   Serial.println("WiFi connected");  
   // turn LED OFF when WiFi is connected
   digitalWrite(0, HIGH);
@@ -76,12 +76,17 @@ void loop() {
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
-    // Serial.printf("R %d,%u\n", ledId, currentTime);
+    Serial.printf("R %d,%u\n", ledId, currentTime);
     // received a UDP packet, start light cycle
     
     startTime = currentTime;
 
     startDelay = true;
+
+    if(ledId != 0) {
+      timeDelay /= 2;
+      digitalWrite(LED_GPIOS[ledId], LOW);
+    }
 
     // cycleCounter = 1; // so we go into else if block once cycle time has been reached
     ledId = 0;

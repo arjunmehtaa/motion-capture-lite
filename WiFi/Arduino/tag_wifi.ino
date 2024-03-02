@@ -19,7 +19,7 @@ WiFiUDP Udp;
 const char* host = "192.168.75.154";
 unsigned int portToListen = 4210;  // local port to listen on
 unsigned int portToSend = 5000;
-char incomingPacket[255];  // buffer for incoming packets
+char incomingPacket[2];  // buffer for incoming packets
 char replyPacket[100];
 unsigned long timeWindow = 10;
 unsigned long readingWindow = 4;
@@ -73,6 +73,14 @@ void loop() {
   currentTime = millis();
   int packetSize = Udp.parsePacket();
   if (packetSize) {
+
+    int len = Udp.read(incomingPacket, 2);
+    if (len > 0) {
+      incomingPacket[len] = 0;
+    }
+    sequenceNumber = atoi(&incomingPacket[0]);
+    Serial.println(sequenceNumber);
+
     // receive incoming UDP packets
     value = 0;
     // Serial.println("Received");
@@ -93,18 +101,16 @@ void loop() {
       ledArr[value] = inputVoltage;
       inputVoltage = 0;
       if(value >= NUM_LEDS - 1) {
-        sequenceNumber+=1;
         startReading = false;
         for (int i = 0; i < NUM_LEDS; i++) {
           // strcat(replyPacket, itoa(ledArr[i], 10));
           sprintf(replyPacket, "%s%d ", replyPacket, ledArr[i]);
         }
         value = 0;
-        if (sequenceNumber >= NUM_SEQUENCES) {
+        if (sequenceNumber >= NUM_SEQUENCES - 1) {
           Udp.beginPacket(Udp.remoteIP(), portToSend);
           Udp.write(replyPacket);
           Udp.endPacket();
-          sequenceNumber = 0;
           memset(replyPacket, 0, sizeof(replyPacket));
         }
         memset(ledArr, 0, sizeof(ledArr));

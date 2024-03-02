@@ -20,7 +20,7 @@ def receive_messages():
             data, addr = sock_listen.recvfrom(1024)
             counter += 1
             print(counter)
-            print("Received Message:", data.decode("utf-8"), "from", addr)
+            print("Received Message:", data.decode(), "from", addr)
             # message_queue.put({data, addr})
         except KeyboardInterrupt:
             print("Exiting receive_messages thread")

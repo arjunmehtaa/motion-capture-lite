@@ -9,7 +9,8 @@ use std::sync::Arc;
 
 fn send_messages(sending_udp_port: u16) {
     let tag_hosts = vec!["192.168.0.12", "192.168.0.13"];
-    let beamer_hosts = vec!["192.168.0.11", "192.168.0.14", "empty"];
+    let beamer_hosts = vec!["192.168.0.14", "192.168.0.11", "empty"];
+    let NUM_BEAMERS = 3;
 
     thread::sleep(Duration::from_millis(1000));
     let mut counter = 0;
@@ -17,12 +18,12 @@ fn send_messages(sending_udp_port: u16) {
     println!("starting send thread");
 
     let mut beamer_id = 0;
+    let mut udp_hosts = tag_hosts.clone();
     while true {
-        let mut udp_hosts = tag_hosts.clone();
         udp_hosts.push(beamer_hosts[beamer_id]);
         beamer_id = (beamer_id + 1) % beamer_hosts.len();
+        println!("UDP hosts: {:?}", udp_hosts);
         for udp_host in &udp_hosts {
-            // println!("Sending to: {}", udp_host);
             if *udp_host == "empty" {
                 continue
             }
@@ -32,7 +33,8 @@ fn send_messages(sending_udp_port: u16) {
             socket.send_to(msg.as_bytes(), format!("{}:{}", udp_host, sending_udp_port))
                 .expect("Failed to send message");
         }
-        counter = (counter+1) % NUM_LEDS;
+        udp_hosts.pop();
+        counter = (counter+1) % NUM_BEAMERS;
         thread::sleep(Duration::from_millis(100));
     }
 }
@@ -72,6 +74,8 @@ fn main() {
     // let udp_hosts = vec!["192.168.0.11"];
     let sending_udp_port = 4210;
     let listening_udp_port = 5000;
+
+    println!("Hello send thread");
 
     let message_queue: Arc<ConcurrentQueue<(String, SocketAddr)>> = Arc::new(ConcurrentQueue::unbounded());
 
