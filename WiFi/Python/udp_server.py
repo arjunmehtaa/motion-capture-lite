@@ -18,17 +18,18 @@ def receive_messages():
     while True:
         try:
             data, addr = sock_listen.recvfrom(1024)
-            counter+=1
+            counter += 1
             print(counter)
-            print("Received Message:", data.decode(), "from", addr)
+            print("Received Message:", data.decode("utf-8"), "from", addr)
             # message_queue.put({data, addr})
         except KeyboardInterrupt:
             print("Exiting receive_messages thread")
             sock_listen.close()
-            break                
+            break
         except Exception:
             # print("No message received")
             pass
+
 
 if __name__ == "__main__":
     print(sock_listen.getsockname())
