@@ -9,6 +9,7 @@ from collections import deque
 
 class Visualization:
     def __init__(self):
+        print("Vis initialized")
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, projection='3d')
         # Set the limits of the plot
@@ -26,12 +27,12 @@ class Visualization:
         plt.show()
 
     def update(self, x, y, z):
-        print("Update called: ", x, y, z)
+        # print("Update called: ", x, y, z)
 
         self.ax.clear()
-        self.ax.set_xlim([0, 10])
-        self.ax.set_ylim([0, 10])
-        self.ax.set_zlim([0, 10])
+        self.ax.set_xlim([0, 16])
+        self.ax.set_ylim([0, 16])
+        self.ax.set_zlim([0, 16])
 
         # Add the new point to the list
         self.prev_points.append((x, y, z))
@@ -55,7 +56,7 @@ class Visualization:
         self.ax.plot([0, x], [y, y], [z, z], color='r', linestyle=':', alpha=0.5)  # line to y-z plane
 
         self.ax.text(x + 0.8, y + 0.8, z + 0.8, f'({x}, {y}, {z})', color='green', fontsize=8)
-        plt.pause(0.01)  # Pause for a short period to allow the plot to update
+        plt.pause(0.1)  # Pause for a short period to allow the plot to update
         plt.draw()
 
 if __name__ == "__main__":
