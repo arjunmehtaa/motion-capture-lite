@@ -1,8 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-const int NUM_LEDS = 6;
-int LED_GPIOS[NUM_LEDS] = {4, 5, 2, 16, 0, 15};
+const int NUM_LEDS = 4;
+int LED_GPIOS[NUM_LEDS] = {4, 5, 2, 16};
 
 /* Setup WiFi paramteres */
 const char* ssid     = "dlink-A40C";
@@ -30,11 +30,11 @@ bool startDelay = false;
 
 void setup() {
   Serial.begin(19200);
-  pinMode(0, OUTPUT);
+  // pinMode(0, OUTPUT);
   Serial.printf("Time window: %u, Reading window: %u\n", timeWindow, readingWindow);
 
   // turn LED ON by default
-  digitalWrite(0, LOW);
+  // digitalWrite(0, LOW);
 
   // We start by connecting to a WiFi network
 
@@ -53,16 +53,17 @@ void setup() {
   Serial.println("");
   Serial.println("WiFi connected");  
   // turn LED OFF when WiFi is connected
-  digitalWrite(0, HIGH);
+  // digitalWrite(0, HIGH);
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   uint16 ab = Udp.begin(portToListen);
   // Serial.printf("Now listening at IP %s, UDP port %d, %d\n", WiFi.localIP().toString().c_str(), portToListen, ab);
 
   int i;
-  for (i=0;i<NUM_LEDS;i++){
-    pinMode(LED_GPIOS[i], OUTPUT); // Set the pin as an OUTPUT
-    digitalWrite(LED_GPIOS[i], LOW);
+  int ALL_LED_GPIOS[6] = {4, 5, 2, 16, 0, 15};
+  for (i=0;i<6;i++){
+    pinMode(ALL_LED_GPIOS[i], OUTPUT); // Set the pin as an OUTPUT
+    digitalWrite(ALL_LED_GPIOS[i], LOW);
   }
 }
 
@@ -99,8 +100,11 @@ void loop() {
   if(startDelay && (currentTime - startTime >= timeDelay)) {
       // Serial.println("Delay finished");
       // Serial.printf("Turning on LED %d\n", ledId);
-      if(ledId == 0 || ledId == 1) {
+      if(ledId < NUM_LEDS) {
         digitalWrite(LED_GPIOS[ledId], HIGH);
+      } else {
+        Serial.println("LEDID TOO LARGE");
+        Serial.println(ledId);
       }
       startDelay = false;
       startTime = currentTime;
