@@ -99,7 +99,7 @@ void loop() {
   if(startDelay && (currentTime - startTime >= timeDelay)) {
       // Serial.println("Delay finished");
       // Serial.printf("Turning on LED %d\n", ledId);
-      if(ledId % 2 == 0) {
+      if(ledId == 0 || ledId == 1) {
         digitalWrite(LED_GPIOS[ledId], HIGH);
       }
       startDelay = false;
