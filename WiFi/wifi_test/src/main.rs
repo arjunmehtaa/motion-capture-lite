@@ -9,12 +9,12 @@ use std::sync::Arc;
 
 fn send_messages(sending_udp_port: u16) {
     let tag_hosts = vec!["192.168.0.12", "192.168.0.13"];
-    let beamer_hosts = vec!["192.168.0.11", "192.168.0.14", "empty"];
-    let NUM_BEAMERS = 3;
+    let beamer_hosts = vec!["192.168.0.11", "192.168.0.14", "192.168.0.15", "192.168.0.16", "empty" ];
+    let NUM_BEAMERS = 5;
 
     thread::sleep(Duration::from_millis(1000));
     let mut counter = 0;
-    let NUM_LEDS = 6;
+    let NUM_LEDS = 4;
     println!("starting send thread");
 
     let mut beamer_id = 0;

@@ -1,8 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 
-const int NUM_LEDS = 6;
-const int NUM_SEQUENCES = 3;
+const int NUM_LEDS = 4;
+const int NUM_SEQUENCES = 5;
 int ledArr[NUM_LEDS];
 
 /* Assign pins */
@@ -79,7 +79,7 @@ void loop() {
       incomingPacket[len] = 0;
     }
     sequenceNumber = atoi(&incomingPacket[0]);
-    Serial.println(sequenceNumber);
+    // Serial.println(sequenceNumber);
 
     // receive incoming UDP packets
     value = 0;

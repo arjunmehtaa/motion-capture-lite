@@ -14,7 +14,7 @@ counter = 1
 sock_listen.bind(("", listening_udp_port))
 sock_listen.setblocking(False)
 
-NUM_BEAMERS = 3
+NUM_BEAMERS = 5
 NUM_LEDS_PER_BEAMER = 4
 NUM_TOTAL_LEDS = NUM_BEAMERS * NUM_LEDS_PER_BEAMER
 
@@ -88,9 +88,9 @@ def get_region_number(sequence, beamer_id: int):
 
     try:
         rnum = regions.index(sequence)
-        if rnum == 0 and prev_region[beamer_id] >= 10:
-            rnum = 15
-        prev_region[beamer_id] = rnum
+        # if rnum == 0 and prev_region[beamer_id] >= 10:
+        #     rnum = 15
+        # prev_region[beamer_id] = rnum
         return rnum
     except ValueError:
         return f"{sequence} is not a valid region"
@@ -98,10 +98,12 @@ def get_region_number(sequence, beamer_id: int):
 THRESHOLD_VALUES = [
         [3, 6, 6, 6],
         [7, 6, 6, 6],
-        [0, 0, 0, 0]
+        [3, 6, 6, 6],
+        [3, 6, 6, 6],
+        [3, 6, 6, 6],
     ]
-prev_four_value = [0, 0, 0]
-prev_four_state = ["0", "0", "0"]
+prev_four_value = [0, 0, 0, 0, 0]
+prev_four_state = ["0", "0", "0", "0", "0"]
 def adc_to_binary(region: List[str], beamer_id: int):
     """
     Converting ADC array to binary 
@@ -156,26 +158,55 @@ def parse_message(message: str):
         try:
             beamer_regions.append(adc_to_binary(values[i:i + NUM_LEDS_PER_BEAMER], i // NUM_LEDS_PER_BEAMER))
         except Exception as e:
-            print("Exception 1: ", e)
+            print("Exception 1: ", e, i, i + NUM_LEDS_PER_BEAMER, len(values))
     print("Beamer 1:", values[0:4])
     print("Beamer 2:", values[4:8])
+    print("Beamer 3:", values[8:12])
+    print("Beamer 4:", values[12:16])
+    print("Beamer 5:", values[16:20])
 
     try:
 
         b1 = get_region_number(beamer_regions[0][0:4], 0)
         b2 = get_region_number(beamer_regions[1][0:4], 1)
+        b3 = get_region_number(beamer_regions[2][0:4], 2)
+        b4 = get_region_number(beamer_regions[3][0:4], 2)
+        b5 = get_region_number(beamer_regions[4][0:4], 2)
 
-        b2 = max(min(b2, b1 - 3), 0)
+        # b2 = max(min(b2, b1 - 3), 0)
 
-        b1a = get_angle_from_region(b1)
-        b2a = get_angle_from_region(b2)
+        # b1a = get_angle_from_region(b1)
+        # b2a = get_angle_from_region(b2)
 
-        print("Regions:", b1, b2)
+        # print("Regions:", b1, b2, b3)
+        # print("MIN:", min(b1, b2))
+        # print("MAX:", max(b1, b2))
 
-        x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
-        print("Positions: ", b1, y)
+        # x: use b1/b3 closest to 8
+        x = -1
+        if abs(b1 - 8) < abs(b3 - 8):
+            x = b1
+        else:
+            x = b3
+        print("x:", x)
+
+        # x: use b2/b4 closest to 8
+        y = -1
+        if abs(b2 - 8) < abs(b4 - 8):
+            y = b2
+        else:
+            y = b4
+        print("y:", y)
+
+        int_vals = [int(val) for val in values]
+        print(max(int_vals))
+        z = max(int_vals) // 10
+        print("z:", z)
+
+        # x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
+        # print("Positions: ", b1, y)
         print()
-        vis.update(b1, y, 1)
+        vis.update(x, y, 1)
     except Exception as e:
         print("Exception 2:", e)
         print()

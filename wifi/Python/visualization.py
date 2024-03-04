@@ -14,7 +14,7 @@ class Visualization:
         self.ax = self.fig.add_subplot(111, projection='3d')
         # Set the limits of the plot
         self.ax.set_xlim([0, 16])
-        self.ax.set_ylim([-10, 0])
+        self.ax.set_ylim([0, 16])
         self.ax.set_zlim([-1, 1])
 
         # Initialize empty scatter plot
@@ -31,7 +31,7 @@ class Visualization:
 
         self.ax.clear()
         self.ax.set_xlim([0, 16])
-        self.ax.set_ylim([-10, 0])
+        self.ax.set_ylim([0, 16])
         self.ax.set_zlim([-1, 1])
 
         # Add the new point to the list
