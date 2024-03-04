@@ -4,6 +4,7 @@ import threading
 import queue
 from random import randint
 import math
+from typing import List
 
 sock_listen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -72,43 +73,41 @@ def compute_xy_coordinates(angle_b1, angle_b2, pos_b1: Point, pos_b2: Point):
     return (x3, y3)
 
 
-def get_region_number(sequence):
+prev_region = [-1, -1, -1]
+def get_region_number(sequence, beamer_id: int):
     regions = [
-        "000", 
-        "001", 
-        "011",
-        "010",
-        "110", 
-        "111",
-        "101",
-        "100", 
-    ]
-    regions = [
-        "0000", "0001", 
-        "0010", "0011",
-        "0110", "0111",
-        "0100", "0101",
-        "1100", "1101",
-        "1110", "1111",
-        "1010", "1011",
-        "1000", "1001"
+        "0000", "0001", # 0
+        "0010", "0011", # 2
+        "0110", "0111", # 4
+        "0100", "0101", # 6
+        "1100", "1101", # 8
+        "1110", "1111", # 10
+        "1010", "1011", # 12
+        "1000", "1001"  # 14
     ]
 
     try:
-        return regions.index(sequence)
+        rnum = regions.index(sequence)
+        if rnum == 0 and prev_region[beamer_id] >= 10:
+            rnum = 15
+        prev_region[beamer_id] = rnum
+        return rnum
     except ValueError:
         return f"{sequence} is not a valid region"
 
 THRESHOLD_VALUES = [
-        [8, 9, 11, 6],
-        [6, 6, 6 , 6],
+        [3, 6, 6, 6],
+        [7, 6, 6, 6],
         [0, 0, 0, 0]
     ]
 prev_four_value = [0, 0, 0]
 prev_four_state = ["0", "0", "0"]
-def adc_to_binary(region: str, beamer_id: int):
+def adc_to_binary(region: List[str], beamer_id: int):
+    """
+    Converting ADC array to binary 
+    (["8", "20", "8"] -> "010")
+    """
     ret = ""
-
     for i in range(3):
         val = region[i]
         val = int(val)
@@ -136,9 +135,14 @@ def adc_to_binary(region: str, beamer_id: int):
 
 TOTAL_REGIONS = 2 ** NUM_LEDS_PER_BEAMER
 def get_angle_from_region(region_num: int):
+    """
+    Get's angle from region starting from 0 degrees
+    """
     if not (region_num >= 0 and region_num < TOTAL_REGIONS):
         print("WRONG REGION NUM", region_num)
-    return (130 / TOTAL_REGIONS) * region_num + 4
+    one_region = 100 / (TOTAL_REGIONS - 1)
+    return 40 + (one_region * region_num)
+
 
 def parse_message(message: str):
     values = message.split()
@@ -158,23 +162,26 @@ def parse_message(message: str):
 
     try:
 
-        b1 = get_region_number(beamer_regions[0][0:4])
-        b2 = get_region_number(beamer_regions[1][0:4])
+        b1 = get_region_number(beamer_regions[0][0:4], 0)
+        b2 = get_region_number(beamer_regions[1][0:4], 1)
+
+        b2 = max(min(b2, b1 - 3), 0)
 
         b1a = get_angle_from_region(b1)
         b2a = get_angle_from_region(b2)
 
         print("Regions:", b1, b2)
 
-        x, y = compute_xy_coordinates(180 - (b1a + 25), (b2a + 25), Point(0, 0, 0), Point(5, 0, 0))
-        print("Positions: ", x, y)
+        x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
+        print("Positions: ", b1, y)
+        print()
+        vis.update(b1, y, 1)
     except Exception as e:
         print("Exception 2:", e)
+        print()
         pass
 
-    print()
 
-    vis.update(x, y, 1)
 
     
 def receive_messages():
@@ -199,5 +206,10 @@ def receive_messages():
 if __name__ == "__main__":
     print(sock_listen.getsockname())
     receive_messages()
-    # vis = Visualization()
-    # print out my IP
+
+    # for i in range(0, 16):
+    #     for j in range(0, 16):
+    #         if j >= i:
+    #             continue
+    #         print(f"{i} - {j}: {compute_xy_coordinates(180 - get_angle_from_region(i), get_angle_from_region(j), Point(0, 0, 0), Point(15, 0, 0))}")
+    #         print()
