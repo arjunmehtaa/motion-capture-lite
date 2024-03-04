@@ -56,11 +56,11 @@ class Visualization:
         self.ax.plot([0, x], [y, y], [z, z], color='r', linestyle=':', alpha=0.5)  # line to y-z plane
 
         self.ax.text(x + 0.8, y + 0.8, z + 0.8, f'({x}, {y}, {z})', color='green', fontsize=8)
-        plt.pause(0.1)  # Pause for a short period to allow the plot to update
+        plt.pause(0.01)  # Pause for a short period to allow the plot to update
         plt.draw()
 
 if __name__ == "__main__":
     vis = Visualization()
-    for i in range(10):
+    for i in range(1000):
         vis.update(randint(0, 10), randint(0, 10), randint(0, 10))
-        time.sleep(0.1)
+        time.sleep(0.01)

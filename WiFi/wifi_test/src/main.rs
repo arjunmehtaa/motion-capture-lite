@@ -9,8 +9,8 @@ use std::sync::Arc;
 
 fn send_messages(sending_udp_port: u16) {
     let tag_hosts = vec!["192.168.0.12", "192.168.0.13"];
-    let beamer_hosts = vec!["192.168.0.11", "192.168.0.14", "192.168.0.15", "192.168.0.16", "empty" ];
-    let NUM_BEAMERS = 5;
+    let beamer_hosts = vec!["192.168.0.11", "192.168.0.14", "192.168.0.15", "192.168.0.16"];
+    let NUM_BEAMERS = 4;
 
     thread::sleep(Duration::from_millis(1000));
     let mut counter = 0;
@@ -35,7 +35,7 @@ fn send_messages(sending_udp_port: u16) {
         }
         udp_hosts.pop();
         counter = (counter+1) % NUM_BEAMERS;
-        thread::sleep(Duration::from_millis(70));
+        thread::sleep(Duration::from_millis(50));
     }
 }
 

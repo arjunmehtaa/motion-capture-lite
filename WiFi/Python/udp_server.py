@@ -14,96 +14,46 @@ counter = 1
 sock_listen.bind(("", listening_udp_port))
 sock_listen.setblocking(False)
 
-NUM_BEAMERS = 5
+NUM_BEAMERS = 4
 NUM_LEDS_PER_BEAMER = 4
 NUM_TOTAL_LEDS = NUM_BEAMERS * NUM_LEDS_PER_BEAMER
 
 from visualization import Visualization
-
 vis = Visualization()
 
-class Point:
-    def __init__(self, x = None, y = None, z = None):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def get(self):
-        return (self.x, self.y, self.z)
-    
-def compute_xy_coordinates(angle_b1, angle_b2, pos_b1: Point, pos_b2: Point):
-    """
-    Computes x and y coordinates of tag
-    Refer to https://math.stackexchange.com/questions/1725790/calculate-third-point-of-triangle-from-two-points-and-angles
-
-    angle_b1  : incidence angle of beamer 1 (degrees)
-    angle_b2  : incidence angle of beamer 2 (degrees)
-    pos_b1    : position of beamer 1 
-    pos_b2    : position of beamer 2
-    """
-    print("Angles: ", angle_b1, angle_b2)
-
-    # Extract coordinates of known points
-    x1, y1, _ = pos_b1.get()
-    x2, y2, _ = pos_b2.get()
-
-    # Compute x and y offset
-    u = x2 - x1
-    v = y2 - y1
-
-    # Compute distance between given points
-    distance = math.sqrt(u**2 + v**2)
-    print("Distance:", distance)
-
-    # Convert angles to radians and find 3rd angle
-    a1 = math.radians(angle_b1)
-    a2 = math.radians(angle_b2)
-    a3 = math.pi - a1 - a2
-    print("Third Angle:", a3*57.2974693618)
-
-    # Set up equations
-    l = distance * (math.sin(a2) / math.sin(a3))
-    eq1 = (x1 * u) + (y1 * v) + (l * distance * math.cos(a1))
-    eq2 = (y2 * u) - (x2 * v) - (l * distance * math.sin(a1))
-
-    # Calculate coordinates of third point
-    x3 = (1 / distance**2) * ((u * eq1) - (v * eq2))
-    y3 = (1 / distance**2) * ((v * eq1) + (u * eq2))
-
-    return (x3, y3)
-
-
-prev_region = [-1, -1, -1]
+prev_region = [-1] * NUM_BEAMERS
 def get_region_number(sequence, beamer_id: int):
-    regions = [
-        "0000", "0001", # 0, 1
-        "0010", "0011", # 2, 3
-        "0110", "0111", # 4, 5
-        "0100", "0101", # 6, 7
-        "1100", "1101", # 8, 9
-        "1110", "1111", # 10, 11
-        "1010", "1011", # 12, 13
-        "1000", "1001"  # 14, 15
-    ]
+    regions = {
+    "0000": 0, "0001": 1,
+    "0010": 2, "0011": 3,
+    "0110": 4, "0111": 5,
+    "0100": 6, "0101": 7,
+    "1100": 8, "1101": 9,
+    "1110": 10, "1111": 11,
+    "1010": 12, "1011": 13,
+    "1000": 14, "1001": 15
+    }
 
     try:
-        rnum = regions.index(sequence)
-        # if rnum == 0 and prev_region[beamer_id] >= 10:
-        #     rnum = 15
-        # prev_region[beamer_id] = rnum
+        rnum = regions[sequence]
+        if rnum == 0 and prev_region[beamer_id] >= 10:
+            rnum = 15
+        else:
+            prev_region[beamer_id] = rnum
         return rnum
     except ValueError:
         return f"{sequence} is not a valid region"
 
 THRESHOLD_VALUES = [
-        [4, 6, 9, 6], #b1
+        [7, 7, 10, 6], #b0
+        [7, 7, 12, 6], #b1
         [7, 7, 12, 6], #b2
-        [7, 7, 12, 6], #b3
-        [3, 6, 6, 6],
+        [7, 7, 10, 6], #b3
         [3, 6, 6, 6],
     ]
-prev_four_value = [0, 0, 0, 0, 0]
-prev_four_state = ["0", "0", "0", "0", "0"]
+
+prev_four_value = [0] * NUM_BEAMERS
+prev_four_state = ["0"] * NUM_BEAMERS
 def adc_to_binary(region: List[str], beamer_id: int):
     """
     Converting ADC array to binary 
@@ -119,10 +69,10 @@ def adc_to_binary(region: List[str], beamer_id: int):
             ret += "0"
     
     # 4th LED
-    val4 = int(region[3])
     global prev_four_value
     global prev_four_state
-
+    
+    val4 = int(region[3])
     if val4 - prev_four_value[beamer_id] < -1:
         ret += "0"
         prev_four_value[beamer_id] = val4
@@ -135,95 +85,77 @@ def adc_to_binary(region: List[str], beamer_id: int):
 
     return ret
 
-TOTAL_REGIONS = 2 ** NUM_LEDS_PER_BEAMER
-def get_angle_from_region(region_num: int):
-    """
-    Get's angle from region starting from 0 degrees
-    """
-    if not (region_num >= 0 and region_num < TOTAL_REGIONS):
-        print("WRONG REGION NUM", region_num)
-    one_region = 100 / (TOTAL_REGIONS - 1)
-    return 40 + (one_region * region_num)
-
-
 def parse_message(message: str):
     values = message.split()
+    values = [int(val) for val in values]
 
     if len(values) != NUM_TOTAL_LEDS:
         print("did not receive NUM_TOTAL_LEDS values, got: ", len(values))
         return
 
-    beamer_regions = []
+    try:
+        beamer_values = [values[i:i + NUM_LEDS_PER_BEAMER] for i in range(0, len(values), NUM_LEDS_PER_BEAMER)]
+    except Exception as e:
+        print("Exception 0: ", e)
 
-    for i in range(0, len(values), NUM_LEDS_PER_BEAMER):
+    beamer_regions = []
+    for i in range(0, NUM_BEAMERS):
         try:
-            beamer_regions.append(adc_to_binary(values[i:i + NUM_LEDS_PER_BEAMER], i // NUM_LEDS_PER_BEAMER))
+            beamer_regions.append(adc_to_binary(beamer_values[i], i))
         except Exception as e:
             print("Exception 1: ", e, i, i + NUM_LEDS_PER_BEAMER, len(values))
     
     try:
-
-        b1 = get_region_number(beamer_regions[0][0:4], 0)
-        b2 = get_region_number(beamer_regions[1][0:4], 1)
-        b3 = get_region_number(beamer_regions[2][0:4], 2)
-        b4 = get_region_number(beamer_regions[3][0:4], 2)
-        b5 = get_region_number(beamer_regions[4][0:4], 2)
-
-        # print("Beamer 1:", values[0:4])
-        print("Beamer 2:", values[4:8])
-        print("Threshol:", THRESHOLD_VALUES[1])
-        print(b2)
-        print()
-
-        print("Beamer 3:", values[8:12])
-        print("Threshol:", THRESHOLD_VALUES[2])
-        print(b3)
-        # print("Beamer 4:", values[12:16])
-        # print("Beamer 5:", values[16:20])
-
-        # b2 = max(min(b2, b1 - 3), 0)
-
-        # b1a = get_angle_from_region(b1)
-        # b2a = get_angle_from_region(b2)
-
-        # print("Regions:", b1, b2, b3)
-        # print("MIN:", min(b1, b2))
-        # print("MAX:", max(b1, b2))
-
-        # x: use b1/b2 closest to 8
-        x = -1
-        if abs(b3 - 7.5) < abs(b2 - 7.5):
-            x = b3
-        else:
-            x = b2
-
-        print("x:", b3, b2)
-
-        # x: use b3/b4 closest to 8
-        # y = -1
-        # if abs(b3 - 8) < abs(b2 - 8):
-        #     y = b3
-        # else:
-        #     y = b4
-        # print("y:", y, "-", b3, b4)
-
-        int_vals = [int(val) for val in values]
-        print(max(int_vals))
-        z = max(int_vals) // 10
-        print("z:", z)
-
-        # x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
-        # print("Positions: ", b1, y)
-        print()
-        vis.update(x, 1, 1)
+        beamer_rnum = [get_region_number(beamer_regions[i], i) for i in range(NUM_BEAMERS)]
     except Exception as e:
-        print("Exception 2:", e)
-        print()
-        pass
+        print("Exception 2: ", e)
 
 
+    #### x ####
+    x_beamers = [1, 2]
+    x = -1
+    # print("x_beamers:", x_beamers)
+    # for i in x_beamers:
+    #     print(f"B{i} Threshold:     ", THRESHOLD_VALUES[i])
+    #     print(f"B{i} Values:        ", beamer_values[i])
+    #     print(f"B{i} Region Number: ", beamer_rnum[i])
+    #     print()
 
+    x = -1
+    if sum(beamer_values[1]) > sum(beamer_values[2]):
+        x = beamer_rnum[1]
+    else:
+        x = beamer_rnum[2]
+    # print("x:", y)
+    print()
     
+
+    y_beamers = [0, 3]
+    # print("y_beamers:", y_beamers)
+    # for i in y_beamers:
+    #     print(f"B{i} Threshold:     ", THRESHOLD_VALUES[i])
+    #     print(f"B{i} Values:        ", beamer_values[i])
+    #     print(f"B{i} Region Number: ", beamer_rnum[i])
+    #     print()
+
+    # set y to whichever beamer region number has highest beamer_values
+    y = -1
+    if sum(beamer_values[0]) > sum(beamer_values[3]):
+        y = beamer_rnum[0]
+    else:
+        y = beamer_rnum[3]
+    # print("y:", y)
+
+    int_vals = [int(val) for val in values]
+    z = max(int_vals) // 10
+    # print("z:", z)
+    print("(x, y, z): ", x, y, z, time.time())
+
+    # x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
+    # print("Positions: ", b1, y)
+    print()
+    vis.update(x, y, 1)
+
 def receive_messages():
     counter = 0
     while True:

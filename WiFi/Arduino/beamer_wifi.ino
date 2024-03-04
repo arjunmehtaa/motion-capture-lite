@@ -7,7 +7,7 @@ int LED_GPIOS[NUM_LEDS] = {4, 5, 2, 16};
 /* Setup WiFi paramteres */
 const char* ssid     = "dlink-A40C";
 const char* password = "qybmo02053";
-IPAddress local_ip(192, 168, 0, 11);
+IPAddress local_ip(192, 168, 0, 16);
 IPAddress gateway(192, 168, 0, 1);
 IPAddress subnet(255, 255, 255, 0);
 
