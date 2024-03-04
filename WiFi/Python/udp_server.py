@@ -76,14 +76,14 @@ def compute_xy_coordinates(angle_b1, angle_b2, pos_b1: Point, pos_b2: Point):
 prev_region = [-1, -1, -1]
 def get_region_number(sequence, beamer_id: int):
     regions = [
-        "0000", "0001", # 0
-        "0010", "0011", # 2
-        "0110", "0111", # 4
-        "0100", "0101", # 6
-        "1100", "1101", # 8
-        "1110", "1111", # 10
-        "1010", "1011", # 12
-        "1000", "1001"  # 14
+        "0000", "0001", # 0, 1
+        "0010", "0011", # 2, 3
+        "0110", "0111", # 4, 5
+        "0100", "0101", # 6, 7
+        "1100", "1101", # 8, 9
+        "1110", "1111", # 10, 11
+        "1010", "1011", # 12, 13
+        "1000", "1001"  # 14, 15
     ]
 
     try:
@@ -96,9 +96,9 @@ def get_region_number(sequence, beamer_id: int):
         return f"{sequence} is not a valid region"
 
 THRESHOLD_VALUES = [
-        [3, 6, 6, 6],
-        [7, 6, 6, 6],
-        [3, 6, 6, 6],
+        [4, 6, 9, 6], #b1
+        [7, 7, 12, 6], #b2
+        [7, 7, 12, 6], #b3
         [3, 6, 6, 6],
         [3, 6, 6, 6],
     ]
@@ -154,17 +154,13 @@ def parse_message(message: str):
         return
 
     beamer_regions = []
+
     for i in range(0, len(values), NUM_LEDS_PER_BEAMER):
         try:
             beamer_regions.append(adc_to_binary(values[i:i + NUM_LEDS_PER_BEAMER], i // NUM_LEDS_PER_BEAMER))
         except Exception as e:
             print("Exception 1: ", e, i, i + NUM_LEDS_PER_BEAMER, len(values))
-    print("Beamer 1:", values[0:4])
-    print("Beamer 2:", values[4:8])
-    print("Beamer 3:", values[8:12])
-    print("Beamer 4:", values[12:16])
-    print("Beamer 5:", values[16:20])
-
+    
     try:
 
         b1 = get_region_number(beamer_regions[0][0:4], 0)
@@ -172,6 +168,18 @@ def parse_message(message: str):
         b3 = get_region_number(beamer_regions[2][0:4], 2)
         b4 = get_region_number(beamer_regions[3][0:4], 2)
         b5 = get_region_number(beamer_regions[4][0:4], 2)
+
+        # print("Beamer 1:", values[0:4])
+        print("Beamer 2:", values[4:8])
+        print("Threshol:", THRESHOLD_VALUES[1])
+        print(b2)
+        print()
+
+        print("Beamer 3:", values[8:12])
+        print("Threshol:", THRESHOLD_VALUES[2])
+        print(b3)
+        # print("Beamer 4:", values[12:16])
+        # print("Beamer 5:", values[16:20])
 
         # b2 = max(min(b2, b1 - 3), 0)
 
@@ -182,21 +190,22 @@ def parse_message(message: str):
         # print("MIN:", min(b1, b2))
         # print("MAX:", max(b1, b2))
 
-        # x: use b1/b3 closest to 8
+        # x: use b1/b2 closest to 8
         x = -1
-        if abs(b1 - 8) < abs(b3 - 8):
-            x = b1
-        else:
+        if abs(b3 - 7.5) < abs(b2 - 7.5):
             x = b3
-        print("x:", x)
-
-        # x: use b2/b4 closest to 8
-        y = -1
-        if abs(b2 - 8) < abs(b4 - 8):
-            y = b2
         else:
-            y = b4
-        print("y:", y)
+            x = b2
+
+        print("x:", b3, b2)
+
+        # x: use b3/b4 closest to 8
+        # y = -1
+        # if abs(b3 - 8) < abs(b2 - 8):
+        #     y = b3
+        # else:
+        #     y = b4
+        # print("y:", y, "-", b3, b4)
 
         int_vals = [int(val) for val in values]
         print(max(int_vals))
@@ -206,7 +215,7 @@ def parse_message(message: str):
         # x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
         # print("Positions: ", b1, y)
         print()
-        vis.update(x, y, 1)
+        vis.update(x, 1, 1)
     except Exception as e:
         print("Exception 2:", e)
         print()

@@ -22,7 +22,7 @@ fn send_messages(sending_udp_port: u16) {
     while true {
         udp_hosts.push(beamer_hosts[beamer_id]);
         beamer_id = (beamer_id + 1) % beamer_hosts.len();
-        println!("UDP hosts: {:?}", udp_hosts);
+        // println!("UDP hosts: {:?}", udp_hosts);
         for udp_host in &udp_hosts {
             if *udp_host == "empty" {
                 continue
@@ -35,7 +35,7 @@ fn send_messages(sending_udp_port: u16) {
         }
         udp_hosts.pop();
         counter = (counter+1) % NUM_BEAMERS;
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(70));
     }
 }
 
