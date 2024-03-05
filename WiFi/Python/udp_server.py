@@ -17,12 +17,15 @@ sock_listen.setblocking(False)
 NUM_BEAMERS = 4
 NUM_LEDS_PER_BEAMER = 4
 NUM_TOTAL_LEDS = NUM_BEAMERS * NUM_LEDS_PER_BEAMER
+NUM_TAGS = 2
 
 from visualization import Visualization
 vis = Visualization()
 
-prev_region = [-1] * NUM_BEAMERS
-def get_region_number(sequence, beamer_id: int):
+# prev_region = [[-1] * NUM_BEAMERS for _ in range(NUM_TAGS)]
+# print(prev_region)
+
+def get_region_number(sequence, tag_id: int, beamer_id: int):
     regions = {
     "0000": 0, "0001": 1,
     "0010": 2, "0011": 3,
@@ -35,26 +38,26 @@ def get_region_number(sequence, beamer_id: int):
     }
 
     try:
-        rnum = regions[sequence]
-        if rnum == 0 and prev_region[beamer_id] >= 10:
-            rnum = 15
-        else:
-            prev_region[beamer_id] = rnum
-        return rnum
+        # print("IN: ", tag_id, beamer_id)
+        # print(rnum, prev_region[tag_id][beamer_id])
+        # rnum = 
+        # if rnum <= 1 and prev_region[tag_id][beamer_id] >= 10:
+        #     rnum = 15
+        # prev_region[tag_id][beamer_id] = rnum
+        return regions[sequence]
     except ValueError:
         return f"{sequence} is not a valid region"
 
-THRESHOLD_VALUES = [
+THRESHOLD_VALUES = [[
         [7, 7, 10, 6], #b0
         [7, 7, 12, 6], #b1
         [7, 7, 12, 6], #b2
         [7, 7, 10, 6], #b3
         [3, 6, 6, 6],
-    ]
-
-prev_four_value = [0] * NUM_BEAMERS
-prev_four_state = ["0"] * NUM_BEAMERS
-def adc_to_binary(region: List[str], beamer_id: int):
+    ] for _ in range(NUM_TAGS)]
+prev_four_value = [[0] * NUM_BEAMERS for _ in range(NUM_TAGS)]
+prev_four_state = [["0"] * NUM_BEAMERS for _ in range(NUM_TAGS)]
+def adc_to_binary(region: List[str], tag_id: int, beamer_id: int):
     """
     Converting ADC array to binary 
     (["8", "20", "8"] -> "010")
@@ -63,7 +66,7 @@ def adc_to_binary(region: List[str], beamer_id: int):
     for i in range(3):
         val = region[i]
         val = int(val)
-        if val > THRESHOLD_VALUES[beamer_id][i]:
+        if val > THRESHOLD_VALUES[tag_id][beamer_id][i]:
             ret += "1"
         else:
             ret += "0"
@@ -73,24 +76,24 @@ def adc_to_binary(region: List[str], beamer_id: int):
     global prev_four_state
     
     val4 = int(region[3])
-    if val4 - prev_four_value[beamer_id] < -1:
+    if val4 - prev_four_value[tag_id][beamer_id] < -1:
         ret += "0"
-        prev_four_value[beamer_id] = val4
-    elif val4 - prev_four_value[beamer_id] > 1:
+        prev_four_value[tag_id][beamer_id] = val4
+    elif val4 - prev_four_value[tag_id][beamer_id] > 1:
         ret += "1"
-        prev_four_value[beamer_id] = val4
+        prev_four_value[tag_id][beamer_id] = val4
     else:
-        ret += prev_four_state[beamer_id]
-    prev_four_state[beamer_id] = ret[-1]
+        ret += prev_four_state[tag_id][beamer_id]
+    prev_four_state[tag_id][beamer_id] = ret[-1]
 
     return ret
 
-def parse_message(message: str):
+def parse_message(message: str, tag_id: int):
     values = message.split()
     values = [int(val) for val in values]
 
     if len(values) != NUM_TOTAL_LEDS:
-        print("did not receive NUM_TOTAL_LEDS values, got: ", len(values))
+        print(f"{tag_id} did not receive {NUM_TOTAL_LEDS} values, got {len(values)} ")
         return
 
     try:
@@ -101,24 +104,26 @@ def parse_message(message: str):
     beamer_regions = []
     for i in range(0, NUM_BEAMERS):
         try:
-            beamer_regions.append(adc_to_binary(beamer_values[i], i))
+            beamer_regions.append(adc_to_binary(beamer_values[i], tag_id, i))
         except Exception as e:
             print("Exception 1: ", e, i, i + NUM_LEDS_PER_BEAMER, len(values))
     
     try:
-        beamer_rnum = [get_region_number(beamer_regions[i], i) for i in range(NUM_BEAMERS)]
+        beamer_rnum = [get_region_number(beamer_regions[i], tag_id, i) for i in range(NUM_BEAMERS)]
     except Exception as e:
         print("Exception 2: ", e)
 
 
     #### x ####
     x_beamers = [1, 2]
-    x = -1
     # print("x_beamers:", x_beamers)
     # for i in x_beamers:
-    #     print(f"B{i} Threshold:     ", THRESHOLD_VALUES[i])
-    #     print(f"B{i} Values:        ", beamer_values[i])
-    #     print(f"B{i} Region Number: ", beamer_rnum[i])
+    #     try:
+    #         print(f"B{i} Threshold:     ", THRESHOLD_VALUES[tag_id][i])
+    #         print(f"B{i} Values:        ", beamer_values[i])
+    #         print(f"B{i} Region Number: ", beamer_rnum[i])
+    #     except Exception as e:
+    #         print("adshjgsadgjhads", e)
     #     print()
 
     x = -1
@@ -127,13 +132,12 @@ def parse_message(message: str):
     else:
         x = beamer_rnum[2]
     # print("x:", y)
-    print()
-    
+    # print()
 
     y_beamers = [0, 3]
     # print("y_beamers:", y_beamers)
     # for i in y_beamers:
-    #     print(f"B{i} Threshold:     ", THRESHOLD_VALUES[i])
+    #     print(f"B{i} Threshold:     ", THRESHOLD_VALUES[tag_id][i])
     #     print(f"B{i} Values:        ", beamer_values[i])
     #     print(f"B{i} Region Number: ", beamer_rnum[i])
     #     print()
@@ -146,15 +150,33 @@ def parse_message(message: str):
         y = beamer_rnum[3]
     # print("y:", y)
 
-    int_vals = [int(val) for val in values]
-    z = max(int_vals) // 10
+    z = 0
+    for bvals in beamer_values:
+        z += bvals[1]
+
+    print("z (adc):", z)
+    # if z > 1000:
+    #     z = math.log2(1000)
+    # else:
+    print('before z division:', z)
+    print('z log:', math.log2(z), 'division', z/10)
+    # z /= 10
+    z = -math.log2(z) + 8
+
+    if z < 0:
+        z = 0
+    if z > 2.0:
+        z = 2.0
+    z *= 2
+    z += 4
+
     # print("z:", z)
-    print("(x, y, z): ", x, y, z, time.time())
+    print("(x, y, z): ", x, y, z)
 
     # x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
     # print("Positions: ", b1, y)
     print()
-    vis.update(x, y, 1)
+    vis.animate(x, y, z, tag_id)
 
 def receive_messages():
     counter = 0
@@ -163,7 +185,11 @@ def receive_messages():
             data, addr = sock_listen.recvfrom(1024)
             counter += 1
             # print("Received Message:", data.decode(), "from", addr)
-            parse_message(data.decode())
+            print("Address:", addr)
+            if (addr[0] == '192.168.0.13'):
+                parse_message(data.decode(), 0)
+            else:
+                parse_message(data.decode(), 1)
 
             # message_queue.put({data, addr})
         except KeyboardInterrupt:
@@ -179,9 +205,3 @@ if __name__ == "__main__":
     print(sock_listen.getsockname())
     receive_messages()
 
-    # for i in range(0, 16):
-    #     for j in range(0, 16):
-    #         if j >= i:
-    #             continue
-    #         print(f"{i} - {j}: {compute_xy_coordinates(180 - get_angle_from_region(i), get_angle_from_region(j), Point(0, 0, 0), Point(15, 0, 0))}")
-    #         print()
