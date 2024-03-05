@@ -34,7 +34,7 @@ def kalman_smoothing(previous_coordinates, current_coordinates):
     # Measurement noise covariance (tune as needed)
     kf.R = np.eye(state_dim) * 0.1
 
-    kf._alpha_sq = 10
+    kf._alpha_sq = 8
     kf.compute_log_likelihood = False
 
     # Smoothen the current coordinates using Kalman filter
@@ -73,17 +73,28 @@ class Visualization:
         x_mid = (x + self.prev_points[tag_id][-1][0]) / 2
         y_mid = (y + self.prev_points[tag_id][-1][1]) / 2
         z_mid = (z + self.prev_points[tag_id][-1][2]) / 2
-        print("IN ANIMATION")
+        # print("IN ANIMATION")
 
         if x <= 1 and self.prev_points[tag_id][-1][0] >= 12:
             x_mid = 15
             x = 15
+        elif x >= 14 and self.prev_points[tag_id][-1][0] <= 3:
+            x_mid = 15
+            x = 0
+        
         if y <= 1 and self.prev_points[tag_id][-1][1] >= 12:
             y_mid = 15
             y = 15
+        elif y >= 14 and self.prev_points[tag_id][-1][0] <= 3:
+            y_mid = 15
+            y = 0
+
         if z <= 1 and self.prev_points[tag_id][-1][2] >= 12:
             z_mid = 15
             z = 15
+        elif z >= 14 and self.prev_points[tag_id][-1][0] <= 3:
+            z_mid = 15
+            z = 0
 
         try:
             self.update(x_mid, y_mid, z_mid, tag_id)
@@ -105,10 +116,22 @@ class Visualization:
             if len(self.prev_points[tag_id]) >= 1:
                 if x <= 1 and self.prev_points[tag_id][-1][0] >= 12:
                     x = 15
+                
+                if x >= 14 and self.prev_points[tag_id][-1][0] <= 3:
+                    x = 0
+
                 if y <= 1 and self.prev_points[tag_id][-1][1] >= 12:
                     y = 15
+
+                if y >= 14 and self.prev_points[tag_id][-1][1] <= 3:
+                    y = 0
+
                 if z <= 1 and self.prev_points[tag_id][-1][2] >= 12:
                     z = 15
+
+                if z >= 14 and self.prev_points[tag_id][-1][2] <= 3:
+                    z = 0
+
         except Exception as e:
             print("ahodikajsdhjkas", e)
 
@@ -119,9 +142,9 @@ class Visualization:
         if len(self.prev_points[tag_id]) > 5:
             self.prev_points[tag_id].popleft()
             try:
-                print("Before: ", x, y, z)
+                # print("Before: ", x, y, z)
                 x, y, z = kalman_smoothing(self.prev_points[tag_id], (x, y, z))
-                print("After:", x, y, z)
+                # print("After:", x, y, z)  
             except Exception as e:
                 print("kalman error: ", e)
                 pass
@@ -141,9 +164,12 @@ class Visualization:
 
                 self.scatter = self.ax.scatter(x, y, z, c=z, cmap='viridis')
 
-        self.ax.plot([x, x], [y, y], [0, z], color='r', linestyle=':', alpha=0.5)  # line to x-y plane
-        self.ax.plot([x, x], [0, y], [z, z], color='r', linestyle=':', alpha=0.5)  # line to x-z plane
-        self.ax.plot([0, x], [y, y], [z, z], color='r', linestyle=':', alpha=0.5)  # line to y-z plane
+        for tid in range(0, 2):
+            x, y, z = self.prev_points[tid][-1]
+            color = 'b' if tid == 0 else 'r'
+            self.ax.plot([x, x], [y, y], [0, z], color=color, linestyle=':', alpha=0.5)  # line to x-y plane
+            self.ax.plot([x, x], [0, y], [z, z], color=color, linestyle=':', alpha=0.5)  # line to x-z plane
+            self.ax.plot([0, x], [y, y], [z, z], color=color, linestyle=':', alpha=0.5)  # line to y-z plane
 
         plt.pause(0.01)  # Pause for a short period to allow the plot to update
         plt.draw()
@@ -151,5 +177,7 @@ class Visualization:
 if __name__ == "__main__":
     vis = Visualization()
     for i in range(1000):
-        vis.update(randint(0, 10), randint(0, 10), randint(0, 1))
-        time.sleep(0.5)
+        vis.animate(randint(0, 10), randint(0, 10), randint(0, 1), 0)
+        time.sleep(0.1)
+        vis.animate(randint(0, 10), randint(0, 10), randint(0, 1), 1)
+        time.sleep(0.1)

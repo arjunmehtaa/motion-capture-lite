@@ -35,7 +35,7 @@ fn send_messages(sending_udp_port: u16) {
         }
         udp_hosts.pop();
         counter = (counter+1) % NUM_BEAMERS;
-        thread::sleep(Duration::from_millis(100));
+        thread::sleep(Duration::from_millis(70));
     }
 }
 

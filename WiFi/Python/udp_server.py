@@ -48,13 +48,21 @@ def get_region_number(sequence, tag_id: int, beamer_id: int):
     except ValueError:
         return f"{sequence} is not a valid region"
 
-THRESHOLD_VALUES = [[
+THRESHOLD_VALUES = [
+    [
         [7, 7, 10, 6], #b0
         [7, 7, 12, 6], #b1
         [7, 7, 12, 6], #b2
         [7, 7, 10, 6], #b3
-        [3, 6, 6, 6],
-    ] for _ in range(NUM_TAGS)]
+    ],
+    [
+        [12, 30, 19, 14], #b1
+        [12, 30, 19, 14], #b1
+        [12, 30, 19, 14], #b2
+        [12, 30, 19, 14], #b1
+    ]
+]
+
 prev_four_value = [[0] * NUM_BEAMERS for _ in range(NUM_TAGS)]
 prev_four_state = [["0"] * NUM_BEAMERS for _ in range(NUM_TAGS)]
 def adc_to_binary(region: List[str], tag_id: int, beamer_id: int):
@@ -102,6 +110,7 @@ def parse_message(message: str, tag_id: int):
         print("Exception 0: ", e)
 
     beamer_regions = []
+    print("Beamer Values:", beamer_values)
     for i in range(0, NUM_BEAMERS):
         try:
             beamer_regions.append(adc_to_binary(beamer_values[i], tag_id, i))
@@ -154,12 +163,12 @@ def parse_message(message: str, tag_id: int):
     for bvals in beamer_values:
         z += bvals[1]
 
-    print("z (adc):", z)
+    # print("z (adc):", z)
     # if z > 1000:
     #     z = math.log2(1000)
     # else:
-    print('before z division:', z)
-    print('z log:', math.log2(z), 'division', z/10)
+    # print('before z division:', z)
+    # print('z log:', math.log2(z), 'division', z/10)
     # z /= 10
     z = -math.log2(z) + 8
 
@@ -176,7 +185,13 @@ def parse_message(message: str, tag_id: int):
     # x, y = compute_xy_coordinates(180 - b1a, b2a, Point(0, 0, 0), Point(5, 0, 0))
     # print("Positions: ", b1, y)
     print()
-    vis.animate(x, y, z, tag_id)
+    if tag_id == 0:
+        vis.update(15 - x, y, z, tag_id)
+    elif tag_id == 1:
+        vis.update(15 - x, y, z, tag_id)
+    else:
+        print("tag id: ", tag_id)
+        exit(1)
 
 def receive_messages():
     counter = 0
