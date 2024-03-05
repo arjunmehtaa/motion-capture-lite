@@ -74,6 +74,17 @@ class Visualization:
         y_mid = (y + self.prev_points[tag_id][-1][1]) / 2
         z_mid = (z + self.prev_points[tag_id][-1][2]) / 2
         print("IN ANIMATION")
+
+        if x <= 1 and self.prev_points[tag_id][-1][0] >= 12:
+            x_mid = 15
+            x = 15
+        if y <= 1 and self.prev_points[tag_id][-1][1] >= 12:
+            y_mid = 15
+            y = 15
+        if z <= 1 and self.prev_points[tag_id][-1][2] >= 12:
+            z_mid = 15
+            z = 15
+
         try:
             self.update(x_mid, y_mid, z_mid, tag_id)
             time.sleep(0.1)
