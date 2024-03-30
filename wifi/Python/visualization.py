@@ -34,7 +34,7 @@ def kalman_smoothing(previous_coordinates, current_coordinates):
     # Measurement noise covariance (tune as needed)
     kf.R = np.eye(state_dim) * 0.1
 
-    kf._alpha_sq = 8
+    kf._alpha_sq = 5
     kf.compute_log_likelihood = False
 
     # Smoothen the current coordinates using Kalman filter

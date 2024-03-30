@@ -50,15 +50,15 @@ def get_region_number(sequence, tag_id: int, beamer_id: int):
 
 THRESHOLD_VALUES = [
     [
-        [7, 7, 10, 6], #b0
-        [7, 7, 12, 6], #b1
+        [7, 7, 12, 6], #b0
+        [7, 20, 15, 6], #b1
         [7, 7, 12, 6], #b2
-        [7, 7, 10, 6], #b3
+        [7, 20, 15, 6], #b1
     ],
     [
         [12, 30, 19, 14], #b1
         [12, 30, 19, 14], #b1
-        [12, 30, 19, 14], #b2
+        [12, 25, 19, 14], #b2
         [12, 30, 19, 14], #b1
     ]
 ]
@@ -124,40 +124,39 @@ def parse_message(message: str, tag_id: int):
 
 
     #### x ####
-    x_beamers = [1, 2]
+    x_beamers = [0, 2]
     # print("x_beamers:", x_beamers)
-    # for i in x_beamers:
-    #     try:
-    #         print(f"B{i} Threshold:     ", THRESHOLD_VALUES[tag_id][i])
-    #         print(f"B{i} Values:        ", beamer_values[i])
-    #         print(f"B{i} Region Number: ", beamer_rnum[i])
-    #     except Exception as e:
-    #         print("adshjgsadgjhads", e)
-    #     print()
+    for i in x_beamers:
+        try:
+            # print(f"B{i} Threshold:     ", THRESHOLD_VALUES[tag_id][i])
+            # print(f"B{i} Values:        ", beamer_values[i])
+            print(f"B{i} Region Number: ", beamer_rnum[i])
+        except Exception as e:
+            print("adshjgsadgjhads", e)
+        print()
 
     x = -1
-    if sum(beamer_values[1]) > sum(beamer_values[2]):
-        x = beamer_rnum[1]
+    if sum(beamer_values[x_beamers[0]]) > sum(beamer_values[x_beamers[1]]):
+        x = beamer_rnum[x_beamers[0]]
     else:
-        x = beamer_rnum[2]
-    # print("x:", y)
-    # print()
+        x = beamer_rnum[x_beamers[1]]
 
-    y_beamers = [0, 3]
-    # print("y_beamers:", y_beamers)
-    # for i in y_beamers:
-    #     print(f"B{i} Threshold:     ", THRESHOLD_VALUES[tag_id][i])
-    #     print(f"B{i} Values:        ", beamer_values[i])
-    #     print(f"B{i} Region Number: ", beamer_rnum[i])
-    #     print()
+    y_beamers = [3, 1]
+    # print("y_beamers:", y_beamers)    
+    for i in y_beamers:
+        # print(f"B{i} Threshold:     ", THRESHOLD_VALUES[tag_id][i])
+        # print(f"B{i} Values:        ", beamer_values[i])
+        print(f"B{i} Region Number: ", beamer_rnum[i])
+        print()
 
     # set y to whichever beamer region number has highest beamer_values
     y = -1
-    if sum(beamer_values[0]) > sum(beamer_values[3]):
-        y = beamer_rnum[0]
-    else:
-        y = beamer_rnum[3]
-    # print("y:", y)
+    # if sum(beamer_values[y_beamers[0]]) > sum(beamer_values[y_beamers[1]]):
+    #     y = beamer_rnum[y_beamers[0]]
+    # else:
+    #     y = beamer_rnum[y_beamers[1]]
+    y = beamer_rnum[y_beamers[1]] 
+
 
     z = 0
     for bvals in beamer_values:
@@ -186,9 +185,9 @@ def parse_message(message: str, tag_id: int):
     # print("Positions: ", b1, y)
     print()
     if tag_id == 0:
-        vis.update(15 - x, y, z, tag_id)
+        vis.update(x, 15 - y, z, tag_id)
     elif tag_id == 1:
-        vis.update(15 - x, y, z, tag_id)
+        vis.update(x, 15 - y, z, tag_id)
     else:
         print("tag id: ", tag_id)
         exit(1)
